@@ -12,6 +12,7 @@ def standard_train(opt, network, optimizer, loader, _criterion, wandb):
     for i, (images, targets, sensitive_attr, index) in enumerate(loader):
         images, targets, sensitive_attr = images.to(opt['device']), targets.to(opt['device']), sensitive_attr.to(opt['device'])
         optimizer.zero_grad()
+
         outputs, _ = network(images)
 
         loss = _criterion(outputs, targets)

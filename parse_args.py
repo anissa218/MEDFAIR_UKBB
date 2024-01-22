@@ -201,7 +201,7 @@ def create_exerpiment_setting(opt):
         with open('configs/wandb_init.json') as f:
             wandb_args = json.load(f)
         wandb_args["tags"] = [opt['hash']]
-        wandb_args["name"] = opt['experiment']
+        wandb_args["name"] = opt['wandb_name'] # anissa changed this
         wandb.init(**wandb_args, config = opt)
     else:
         wandb = None

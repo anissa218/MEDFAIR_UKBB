@@ -13,12 +13,12 @@
     "MIMIC_CXR":
     {
         "image_feature_path": "yourpath",
-        "pickle_train_path": "yourpath",
-        "pickle_val_path": "yourpath",
-        "pickle_test_path": "yourpath",
-        "train_meta_path": "yourpath",
-        "val_meta_path": "yourpath",
-        "test_meta_path": "yourpath"
+        "pickle_train_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/mimic-cxr/pkls/train_images.pkl",
+        "pickle_val_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/mimic-cxr/pkls/val_images.pkl",
+        "pickle_test_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/mimic-cxr/pkls/test_images.pkl",
+        "train_meta_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/mimic-cxr/splits/train.csv",
+        "val_meta_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/mimic-cxr/splits/val.csv",
+        "test_meta_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/mimic-cxr/splits/test.csv"
     },
     "PAPILA":
     {
