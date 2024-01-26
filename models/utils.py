@@ -2,13 +2,16 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils.evaluation import calculate_auc, calculate_metrics
+from utils.evaluation import calculate_auc, calculate_metrics, get_pred_df
+import os
 
 from importlib import import_module
 
 def standard_train(opt, network, optimizer, loader, _criterion, wandb):
     """Train the model for one epoch"""
     train_loss, auc, no_iter = 0., 0., 0
+    tol_output, tol_target, tol_sensitive, tol_index = [], [], [], []
+
     for i, (images, targets, sensitive_attr, index) in enumerate(loader):
         images, targets, sensitive_attr = images.to(opt['device']), targets.to(opt['device']), sensitive_attr.to(opt['device'])
         optimizer.zero_grad()
@@ -27,9 +30,19 @@ def standard_train(opt, network, optimizer, loader, _criterion, wandb):
         if opt['log_freq'] and (i % opt['log_freq'] == 0):
             wandb.log({'Training loss': train_loss / no_iter, 'Training AUC': auc / no_iter})
 
+        # anissa extra code:
+        tol_output += F.sigmoid(outputs).flatten().cpu().data.numpy().tolist()
+        tol_target += targets.cpu().data.numpy().tolist()
+        tol_sensitive += sensitive_attr.cpu().data.numpy().tolist()
+        tol_index += index.numpy().tolist()
+
     auc = 100 * auc / no_iter
     train_loss /= no_iter
-    return auc, train_loss
+
+    # more anissa extra code:
+    pred_df = get_pred_df(tol_output, tol_target, tol_sensitive, tol_index)
+
+    return auc, train_loss, pred_df
 
 
 def standard_val(opt, network, loader, _criterion, sens_classes, wandb):
@@ -64,7 +77,6 @@ def standard_val(opt, network, loader, _criterion, sens_classes, wandb):
     auc = 100 * auc / no_iter
     val_loss /= no_iter
     log_dict, t_predictions, pred_df = calculate_metrics(tol_output, tol_target, tol_sensitive, tol_index, sens_classes)
-    
     return auc, val_loss, log_dict, pred_df
 
 

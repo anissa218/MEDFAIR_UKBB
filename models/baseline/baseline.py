@@ -1,6 +1,7 @@
 from models.utils import standard_train
 from models.basenet import BaseNet
 from importlib import import_module
+import os
 
 
 class baseline(BaseNet):
@@ -29,10 +30,14 @@ class baseline(BaseNet):
         """Train the model for one epoch"""
 
         self.network.train()
-        auc, train_loss = standard_train(self.opt, self.network, self.optimizer, loader, self._criterion, self.wandb)
+        auc, train_loss,pred_df = standard_train(self.opt, self.network, self.optimizer, loader, self._criterion, self.wandb)
 
         print('Training epoch {}: AUC:{}'.format(self.epoch, auc))
         print('Training epoch {}: loss:{}'.format(self.epoch, train_loss))
+
+        # anissa code:
+        pred_df.to_csv(os.path.join(self.save_path, 'epoch_' + str(self.epoch)+'_train_pred.csv'), index = False)
+
         
         self.epoch += 1
     

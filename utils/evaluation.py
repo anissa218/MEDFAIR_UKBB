@@ -517,3 +517,17 @@ def calculate_metrics(tol_output, tol_target, tol_sensitive, tol_index, sens_cla
 
     log_dict = get_worst_auc(log_dict)
     return log_dict, tol_predicted, pred_df
+
+def get_pred_df(tol_output, tol_target, tol_sensitive, tol_index):
+
+    correct = 0
+    theshold = (tol_output, tol_target)
+    tol_predicted = (tol_output > theshold).astype('float')
+    correct += (tol_predicted == tol_target).sum()
+    
+    pred_df = pd.DataFrame(columns=['index', 'pred', 'label'])
+    pred_df['index'] = tol_index
+    pred_df['pred'] = tol_predicted
+    pred_df['label'] = np.asarray(tol_target).squeeze()
+    
+    return pred_df

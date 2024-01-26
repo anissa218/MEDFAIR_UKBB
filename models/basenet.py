@@ -122,6 +122,9 @@ class BaseNet(nn.Module):
         self.network.eval()
         auc, val_loss, log_dict, pred_df = standard_val(self.opt, self.network, loader, self._criterion, self.sens_classes, self.wandb)
         
+        # anissa changes: save val pred_df
+        pred_df.to_csv(os.path.join(self.save_path, 'epoch_' + str(self.epoch)+'_val_pred.csv'), index = False)
+
         print('Validation epoch {}: validation loss:{}, AUC:{}'.format(
             self.epoch, val_loss, auc))
         return val_loss, auc, log_dict, pred_df
