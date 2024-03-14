@@ -51,8 +51,11 @@ def get_dataset(opt):
             transform_train = transforms.Compose([
                 transforms.Resize(256),
                 transforms.RandomHorizontalFlip(),
-                transforms.RandomRotation((-15, 15)),
+				transforms.RandomVerticalFlip(), #anissa
+				transforms.RandomRotation((-15, 15)),
                 transforms.RandomCrop((224, 224)),
+                transforms.ColorJitter(0.3,0.3,0.3), #anissa: brightness saturation, contrast
+                transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 2)), #anissa, maybe this is too much
                 transforms.ToTensor(),
                 normalize,
             ])
@@ -78,9 +81,28 @@ def get_dataset(opt):
         random.seed(opt['random_seed'])
         
     image_path = data_setting['image_feature_path']
-    train_meta = pd.read_csv(data_setting['train_meta_path']) 
-    val_meta = pd.read_csv(data_setting['val_meta_path'])
-    test_meta = pd.read_csv(data_setting['test_meta_path'])   
+
+    if opt['dataset_name'] == 'UKBB_RET': # account for having differnet csvs (different binary labels) depending on what prediction task you are doing
+        class_name = opt['class_name']
+        train_meta = pd.read_csv(data_setting['train_' + class_name+ '_meta_path']) 
+        val_meta = pd.read_csv(data_setting['val_' + class_name+ '_meta_path'])
+        test_meta = pd.read_csv(data_setting['test_' + class_name+ '_meta_path'])
+        print('loaded dataset ', opt['dataset_name'], ' with class name ', class_name)
+        if data_setting['adjust_size'] == True:
+            train_name = data_setting['train_' + class_name+ '_meta_path']
+            val_name = data_setting['val_' + class_name+ '_meta_path']
+            test_name = data_setting['test_' + class_name+ '_meta_path']
+            
+            size = data_setting['dataset_size']
+            train_meta = pd.read_csv(train_name.split(".")[0] + str(size) + '.csv')
+            val_meta = pd.read_csv(val_name.split(".")[0] + str(size) + '.csv')
+            test_meta = pd.read_csv(test_name.split(".")[0] + str(size) + '.csv')
+        
+            print('got specific csvs of smaller size')
+    else:
+        train_meta = pd.read_csv(data_setting['train_meta_path']) 
+        val_meta = pd.read_csv(data_setting['val_meta_path'])
+        test_meta = pd.read_csv(data_setting['test_meta_path'])   
     
     if opt['is_3d']:
         dataset_name = getattr(datasets, opt['dataset_name'])
@@ -104,9 +126,15 @@ def get_dataset(opt):
     
     else:
         dataset_name = getattr(datasets, opt['dataset_name'])
-        pickle_train_path = data_setting['pickle_train_path']
-        pickle_val_path = data_setting['pickle_val_path']
-        pickle_test_path = data_setting['pickle_test_path']
+        if  opt['dataset_name'] == 'UKBB_RET' and opt['class_name'] == 'ckd': # different images are saved for this b/c not all images have ckd label
+                pickle_train_path = data_setting['pickle_train_ckd_path']
+                pickle_val_path = data_setting['pickle_val_ckd_path']
+                pickle_test_path = data_setting['pickle_test_ckd_path']
+        else:
+            pickle_train_path = data_setting['pickle_train_path']
+            print('pickle_train_path', pickle_train_path)
+            pickle_val_path = data_setting['pickle_val_path']
+            pickle_test_path = data_setting['pickle_test_path']
         train_data = dataset_name(train_meta, pickle_train_path, opt['sensitive_name'], opt['train_sens_classes'], transform_train)
         val_data = dataset_name(val_meta, pickle_val_path, opt['sensitive_name'], opt['sens_classes'], transform_test)
         test_data = dataset_name(test_meta, pickle_test_path, opt['sensitive_name'], opt['sens_classes'], transform_test)

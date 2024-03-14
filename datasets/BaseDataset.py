@@ -70,6 +70,8 @@ class BaseDataset(torch.utils.data.Dataset):
             A = np.asarray(self.dataframe['skin_binary'].values != 0).astype('float')
         elif self.sens_name == 'Insurance':
             self.A = np.asarray(self.dataframe['Insurance_binary'].values != 0).astype('float')
+        elif self.sens_name == 'Ethnicity': # added extra attribute (not binary, need to check if OK)
+            A = np.asarray(self.dataframe['Ethnicity'].values.astype('float'))
         else:
             raise ValueError("Does not contain {}".format(self.sens_name))
         return A
@@ -112,6 +114,11 @@ class BaseDataset(torch.utils.data.Dataset):
                 elif self.sens_classes == 5:
                     groups = self.dataframe['Insurance'].values
                 group_array = groups.tolist()
+            
+            elif self.sens_name == 'Ethnicity':
+                if self.sens_classes == 4:
+                    groups = self.dataframe['Ethnicity'].values.astype('int')
+                    group_array = groups.tolist()
             else:
                 raise ValueError("sensitive attribute does not defined in BaseDataset")
             
@@ -146,7 +153,10 @@ class BaseDataset(torch.utils.data.Dataset):
         elif self.sens_classes == 5:
             return self.dataframe['Age_multi'].values.tolist()
         elif self.sens_classes == 4:
-            return self.dataframe['Age_multi4'].values.tolist()
+            if self.sens_name == 'Age':
+                return self.dataframe['Age_multi4'].values.tolist()
+            elif self.sens_name == 'Ethnicity': 
+                return self.dataframe['Ethnicity'].values.tolist()
 
     def get_sensitive(self, sens_name, sens_classes, item):
         if sens_name == 'Sex':
@@ -176,6 +186,9 @@ class BaseDataset(torch.utils.data.Dataset):
                 sensitive = int(item['Insurance_binary'])
             elif self.sens_classes == 5:
                 sensitive = int(item['Insurance'])
+        elif self.sens_name == 'Ethnicity':
+            if sens_classes == 4:
+                sensitive = int(item['Ethnicity'])
         else:
             raise ValueError('Please check the sensitive attributes.')
         return sensitive

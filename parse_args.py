@@ -10,8 +10,17 @@ import json
 import hashlib
 import time
 
-
-def collect_args():
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+    
+def collect_args(args=None):
     parser = argparse.ArgumentParser()
     
     # experiments
@@ -34,21 +43,29 @@ def collect_args():
                             'GroupDRO',
                             'BayesCNN',
                             'resamplingSWAD',
-                        ])
+                        ],
+                        default = 'baseline')
 
     parser.add_argument('--experiment_name', type=str, default='test')
     parser.add_argument('--wandb_name', type=str, default='baseline')
     parser.add_argument('--if_wandb', type=bool, default=True)
     parser.add_argument('--dataset_name', default='CXP', choices=['CXP', 'NIH', 'MIMIC_CXR', 'RadFusion', 'RadFusion4', 
     'HAM10000', 'HAM100004', 'Fitz17k', 'OCT', 'PAPILA', 'ADNI', 'ADNI3T', 'COVID_CT_MD','RadFusion_EHR',
-    'MIMIC_III', 'eICU'])
-    
+    'MIMIC_III', 'eICU','UKBB_RET'])
+
+    # class name - just for UKBB
+    parser.add_argument('--class_name', default='sex', choices=['sex', 'bmi', 'ckd', 'bp'])    
     parser.add_argument('--resume_path', type = str, default='', help = 'explicitly indentify checkpoint path to resume.')
     
-    parser.add_argument('--sensitive_name', default='Sex', choices=['Sex', 'Age', 'Race', 'skin_type', 'Insurance'])
+    parser.add_argument('--sensitive_name', default='Sex', choices=['Sex', 'Age', 'Race', 'skin_type', 'Insurance', 'Ethnicity'])
     parser.add_argument('--is_3d', type=bool, default=False)
     parser.add_argument('--is_tabular', type=bool, default=False)
     
+    parser.add_argument('--adjust_size', type=str2bool, nargs='?',
+                        const=False, default=False,
+                        help='if using smaller proportion of data') # anissa changes
+    parser.add_argument('--dataset_size',type=float,default=100,help='size of dataset to be used relative to full dataset, should be 0.01, 0.02,0.1,0.2,0.5,1.0') # anissa changes
+
     # training 
     parser.add_argument('--random_seed', type=int, default=0)
     parser.add_argument('--batch_size', type=int, default=1024)
@@ -61,7 +78,9 @@ def collect_args():
     parser.add_argument('--early_stopping', type=int, default=5, help = 'early stopping epochs')
     parser.add_argument('--test_mode', type=bool, default=False, help = 'if using test mode')
     parser.add_argument('--hyper_search', type=bool, default=False, help = 'if searching hyper-parameters')
-    
+    parser.add_argument('--augment', type=str2bool, nargs='?',
+                        const=True, default=True,
+                        help='if using data augmentation') # anissa changes    
     # testing
     parser.add_argument('--hash_id', type=str, default = '')
     
@@ -78,7 +97,11 @@ def collect_args():
     # network
     parser.add_argument('--backbone', default = 'cusResNet18', choices=['cusResNet18', 'cusResNet50','cusDenseNet121',
                                                                         'cusResNet18_3d', 'cusResNet50_3d', 'cusMLP'])
-    parser.add_argument('--pretrained', type=bool, default=True, help = 'if use pretrained ResNet backbone')
+    #parser.add_argument('--pretrained', type=bool, default=True, help = 'if use pretrained ResNet backbone') 
+    parser.add_argument("--pretrained", type=str2bool, nargs='?',
+                        const=True, default=True,
+                        help='if use pretrained ResNet backbone') # anissa changes
+
     parser.add_argument('--output_dim', type=int, default=14, help='output dimension of the classification network')
     parser.add_argument('--num_classes', type=int, default=14, help='number of target classes')
     parser.add_argument('--sens_classes', type=int, default=2, help='number of sensitive classes')
@@ -136,12 +159,17 @@ def collect_args():
     # logging 
     parser.add_argument('--log_freq', type=int, default=50, help = 'logging frequency (step)')
     
-    opt = vars(parser.parse_args())
+    # anissa test (to run in jupyter notebook)
+    if args is None:
+        opt = vars(parser.parse_args())
+    else:
+        opt = vars(parser.parse_args(args))
+
     opt = create_exerpiment_setting(opt)
     return opt
 
 
-def create_exerpiment_setting(opt):
+def create_exerpiment_setting(opt, do_wandb=True):
     
     # get hash
     
@@ -152,7 +180,7 @@ def create_exerpiment_setting(opt):
     
     opt['device'] = torch.device('cuda' if opt['cuda'] else 'cpu')
     
-    opt['save_folder'] = os.path.join('your_path/fariness_data/model_records', opt['dataset_name'], opt['sensitive_name'], opt['backbone'], opt['experiment'])
+    opt['save_folder'] = os.path.join('your_path/fariness_data/model_records', opt['dataset_name'], opt['sensitive_name'], opt['backbone'], opt['experiment'],opt['wandb_name'])
     opt['resume_path'] = opt['save_folder']
     basics.creat_folder(opt['save_folder'])
     
@@ -181,7 +209,18 @@ def create_exerpiment_setting(opt):
 
     try:
         data_setting = data_path[opt['dataset_name']]
-        data_setting['augment'] = True
+
+        if opt['augment'] == False:
+            data_setting['augment'] = False
+        else:
+            data_setting['augment'] = True
+
+        if opt['adjust_size'] == True:
+            data_setting['adjust_size'] = True
+            data_setting['dataset_size'] = float(opt['dataset_size'])
+        else:
+            data_setting['adjust_size'] = False
+
     except:
         data_setting = {}
     
@@ -196,14 +235,18 @@ def create_exerpiment_setting(opt):
     else:
         opt['train_sens_classes'] = opt['sens_classes']
 
-    import wandb
-    if opt['if_wandb'] == True:
-        with open('configs/wandb_init.json') as f:
-            wandb_args = json.load(f)
-        wandb_args["tags"] = [opt['hash']]
-        wandb_args["name"] = opt['wandb_name'] # anissa changed this
-        wandb.init(**wandb_args, config = opt)
+    if do_wandb == False:
+        wandb=None
+        return opt,wandb
     else:
-        wandb = None
+        import wandb
+        if opt['if_wandb'] == True:
+            with open('configs/wandb_init.json') as f:
+                wandb_args = json.load(f)
+            wandb_args["tags"] = [opt['hash']]
+            wandb_args["name"] = opt['wandb_name'] # anissa changed this
+            wandb.init(**wandb_args, config = opt)
+        else:
+            wandb = None
         
     return opt, wandb

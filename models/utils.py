@@ -27,7 +27,10 @@ def standard_train(opt, network, optimizer, loader, _criterion, wandb):
         train_loss += loss.item()
         no_iter += 1
         
-        if opt['log_freq'] and (i % opt['log_freq'] == 0):
+        if opt['log_freq'] and (i % opt['log_freq'] == 0) and wandb != None:
+            # this is being done at every batch (not on whole set of data, maybe should only call at end of epoch)
+            # maybe here I could also add the outputs and targets (or image information) so that i can link the auc data to each original image
+            # but not actually sure you can have AUC for individual images?
             wandb.log({'Training loss': train_loss / no_iter, 'Training AUC': auc / no_iter})
 
         # anissa extra code:
@@ -71,12 +74,13 @@ def standard_val(opt, network, loader, _criterion, sens_classes, wandb):
             
             no_iter += 1
             
-            if opt['log_freq'] and (i % opt['log_freq'] == 0):
+            if opt['log_freq'] and (i % opt['log_freq'] == 0)  and wandb != None:
                 wandb.log({'Validation loss': val_loss / no_iter, 'Validation AUC': auc / no_iter})
 
     auc = 100 * auc / no_iter
     val_loss /= no_iter
     log_dict, t_predictions, pred_df = calculate_metrics(tol_output, tol_target, tol_sensitive, tol_index, sens_classes)
+    
     return auc, val_loss, log_dict, pred_df
 
 

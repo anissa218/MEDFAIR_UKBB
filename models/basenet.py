@@ -123,7 +123,10 @@ class BaseNet(nn.Module):
         auc, val_loss, log_dict, pred_df = standard_val(self.opt, self.network, loader, self._criterion, self.sens_classes, self.wandb)
         
         # anissa changes: save val pred_df
-        pred_df.to_csv(os.path.join(self.save_path, 'epoch_' + str(self.epoch)+'_val_pred.csv'), index = False)
+        if self.pretrained:
+            pred_df.to_csv(os.path.join(self.save_path, 'pretrained_epoch_' + str(self.epoch)+'_val_pred.csv'), index = False)
+        else:
+            pred_df.to_csv(os.path.join(self.save_path, 'not_pretrained_epoch_' + str(self.epoch)+'_val_pred.csv'), index = False)
 
         print('Validation epoch {}: validation loss:{}, AUC:{}'.format(
             self.epoch, val_loss, auc))
@@ -139,7 +142,11 @@ class BaseNet(nn.Module):
         overall_FPR, overall_FNR, FPRs, FNRs = calculate_FPR_FNR(pred_df, self.test_meta, self.opt)
         log_dict['Overall FPR'] = overall_FPR
         log_dict['Overall FNR'] = overall_FNR
-        pred_df.to_csv(os.path.join(self.save_path, 'pred.csv'), index = False)
+        
+        if self.pretrained:
+            pred_df.to_csv(os.path.join(self.save_path, 'pretrained_test_pred.csv'), index = False)
+        else:
+            pred_df.to_csv(os.path.join(self.save_path, 'not_pretrained_test_pred.csv'), index = False)
         
         for i, FPR in enumerate(FPRs):
             log_dict['FPR-group_' + str(i)] = FPR
@@ -210,7 +217,29 @@ class BaseNet(nn.Module):
         print(log_dict)
         
         return pd.DataFrame(log_dict, index=[0])
-    
+
+    def infer(self):
+        state_dict = torch.load(os.path.join(self.resume_path, str(self.seed) +'_best.pth'))
+        print('Testing, loaded model from ', os.path.join(self.resume_path, str(self.seed) +'_best.pth'))
+        self.network.load_state_dict(state_dict['model'])
+
+        self.network.eval()
+
+        tol_output, tol_target, tol_sensitive, tol_index = [], [], [], []
+
+        for i, (images, targets, sensitive_attr, index) in enumerate(self.test_loader):
+            images, targets, sensitive_attr = images.to(self.opt['device']), targets.to(self.opt['device']), sensitive_attr.to(
+                self.opt['device'])
+            outputs, features = self.network.forward(images)
+
+            tol_output += F.sigmoid(outputs).flatten().cpu().data.numpy().tolist()
+            tol_target += targets.cpu().data.numpy().tolist()
+            tol_sensitive += sensitive_attr.cpu().data.numpy().tolist()
+            tol_index += index.numpy().tolist()
+
+        return tol_output, features
+
+
     def record_val(self):
         overall_FPR, overall_FNR, FPRs, FNRs = calculate_FPR_FNR(self.best_pred_df, self.val_meta, self.opt)
         self.best_log_dict['Overall FPR'] = overall_FPR

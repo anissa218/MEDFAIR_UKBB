@@ -3,6 +3,7 @@ import torchvision
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models.feature_extraction import create_feature_extractor
+import torch
 
 
 class cusResNet18(nn.Module):    
@@ -17,6 +18,7 @@ class cusResNet18(nn.Module):
         self.returnkey_fc = 'fc'
         self.body = create_feature_extractor(
             resnet, return_nodes={'avgpool': self.returnkey_avg, 'fc': self.returnkey_fc})
+
 
     def forward(self, x):
         outputs = self.body(x)

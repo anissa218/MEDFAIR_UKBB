@@ -11,3 +11,4 @@ from datasets.Fitz17k import Fitz17k
 from datasets.COVID_CT_MD import COVID_CT_MD
 from datasets.MIMIC_III import MIMIC_III
 from datasets.eICU import eICU
+from datasets.UKBB_RET import UKBB_RET

@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from utils import basics
 import glob
+import torch
 
 
 def train(model, opt):
@@ -15,21 +16,39 @@ def train(model, opt):
     # record val metrics for hyperparameter selection
     pred_df = model.record_val()
     return pred_df
+
+class MyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, torch.device):
+            return str(obj)
+        elif isinstance(obj, type):
+            return str(obj)
+        return super().default(obj)
     
 
 if __name__ == '__main__':
     
     opt, wandb = parse_args.collect_args()
+    print('pretrained after collect args: ')
+    print(opt['pretrained'])
     if not opt['test_mode']:
         
-        random_seeds = np.random.choice(range(100), size = 3, replace=False).tolist()
+        random_seeds = np.random.choice(range(100), size = 1, replace=False).tolist() # changed this so so that each model is only trained once!!
         val_df = pd.DataFrame()
         test_df = pd.DataFrame()
         print('Random seed: ', random_seeds)
         for random_seed in random_seeds:
             opt['random_seed'] = random_seed
+
+            # temporary code
+            # with open('opt.json', 'w') as f:
+            #     json.dump(opt, f, cls=MyEncoder)
+            # print('dict saved')
+
             model = basics.get_model(opt, wandb)
+
             pred_df = train(model, opt)
+
             val_df = pd.concat([val_df, pred_df])
             
             pred_df = model.test()
@@ -37,8 +56,9 @@ if __name__ == '__main__':
             
         stat_val = basics.avg_eval(val_df, opt, 'val')
         stat_test = basics.avg_eval(test_df, opt, 'test')
-        model.log_wandb(stat_val.to_dict())
-        model.log_wandb(stat_test.to_dict())        
+        if wandb != None:
+            model.log_wandb(stat_val.to_dict())
+            model.log_wandb(stat_test.to_dict())        
     else:
         
         if opt['cross_testing']:

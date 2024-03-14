@@ -84,6 +84,11 @@ def calculate_FPR_FNR(pred_df, test_meta, opt):
         elif opt['sens_classes'] == 6:
             sens_attr_name = 'skin_type'
         sens = np.arange(0, opt['sens_classes']).tolist()
+
+    elif sens_attrs == 'Ethnicity':
+        if opt['sens_classes'] == 4:
+            sens_attr_name = 'Ethnicity'
+        sens = np.arange(0, opt['sens_classes']).tolist()
     else:
         raise ValueError("{} not defined".format(sens_attrs))
     
@@ -155,8 +160,11 @@ def conditional_AUC_multi(preds, labels, attrs, sens_classes):
     
     aucs = []
     for i in range(sens_classes):
+
         idx = attrs == i
+
         auc = calculate_auc(preds[idx], labels[idx])
+
         aucs.append(auc)
     return aucs
 
@@ -448,10 +456,11 @@ def calculate_metrics(tol_output, tol_target, tol_sensitive, tol_index, sens_cla
     tol_predicted = (tol_output > theshold).astype('float')
     correct += (tol_predicted == tol_target).sum()
     
-    pred_df = pd.DataFrame(columns=['index', 'pred', 'label'])
+    pred_df = pd.DataFrame(columns=['index', 'pred', 'label','raw_pred'])
     pred_df['index'] = tol_index
     pred_df['pred'] = tol_predicted
     pred_df['label'] = np.asarray(tol_target).squeeze()
+    pred_df['raw_pred'] = tol_output
     
     acc = 100 * correct / len(tol_target)
     auc = calculate_auc(tol_output, tol_target)
@@ -521,13 +530,14 @@ def calculate_metrics(tol_output, tol_target, tol_sensitive, tol_index, sens_cla
 def get_pred_df(tol_output, tol_target, tol_sensitive, tol_index):
 
     correct = 0
-    theshold = (tol_output, tol_target)
+    theshold = find_threshold(tol_output, tol_target)
     tol_predicted = (tol_output > theshold).astype('float')
     correct += (tol_predicted == tol_target).sum()
     
-    pred_df = pd.DataFrame(columns=['index', 'pred', 'label'])
+    pred_df = pd.DataFrame(columns=['index', 'pred', 'label','raw_pred'])
     pred_df['index'] = tol_index
     pred_df['pred'] = tol_predicted
     pred_df['label'] = np.asarray(tol_target).squeeze()
-    
+    pred_df['raw_pred'] = tol_output
+
     return pred_df

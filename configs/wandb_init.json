@@ -5,5 +5,5 @@
     "allow_val_change": true,
     "sync_tensorboard": true,
     "tags": ["all"],
-    "mode": "offline"
+    "mode": "online"
 }

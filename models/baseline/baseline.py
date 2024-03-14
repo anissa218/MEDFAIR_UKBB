@@ -35,9 +35,12 @@ class baseline(BaseNet):
         print('Training epoch {}: AUC:{}'.format(self.epoch, auc))
         print('Training epoch {}: loss:{}'.format(self.epoch, train_loss))
 
-        # anissa code:
-        pred_df.to_csv(os.path.join(self.save_path, 'epoch_' + str(self.epoch)+'_train_pred.csv'), index = False)
+        # to distinguish between pretrained and not pretrained model results
+        if self.pretrained:
+            pred_df.to_csv(os.path.join(self.save_path, 'pretrained_epoch_' + str(self.epoch)+'_train_pred.csv'), index = False)
 
-        
+        else:
+            pred_df.to_csv(os.path.join(self.save_path, 'not_pretrained_epoch_' + str(self.epoch)+'_train_pred.csv'), index = False)
+
         self.epoch += 1
     
