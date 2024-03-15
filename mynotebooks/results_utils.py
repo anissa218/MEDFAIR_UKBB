@@ -35,16 +35,16 @@ def preprocess_mimic_data(path_to_preds,path_to_splits):
     test_df= pd.merge(test_df,admissions_df_no_duplicates[['subject_id','insurance', 'marital_status']], on='subject_id',how='left')
 
     # add extra stats on FPs and FNs
-    test_df['erm_pred'] = pred_df['pred']
+    test_df['pred'] = pred_df['pred']
 
     if 'raw_pred' in pred_df.columns: # for models where i also saved raw preds
         test_df['raw_pred'] = pred_df['raw_pred']
 
     # inverted these because 0 is disease and 1 is no disease (negatiev)
-    test_df['FN'] = np.where((test_df['binary_label']==0) & (test_df['erm_pred']==1),1,0)
-    test_df['FP'] = np.where((test_df['binary_label']==1) & (test_df['erm_pred']==0),1,0)
-    test_df['TN'] = np.where((test_df['binary_label']==1) & (test_df['erm_pred']==1),1,0)
-    test_df['TP'] = np.where((test_df['binary_label']==0) & (test_df['erm_pred']==0),1,0)
+    test_df['FN'] = np.where((test_df['binary_label']==0) & (test_df['pred']==1),1,0)
+    test_df['FP'] = np.where((test_df['binary_label']==1) & (test_df['pred']==0),1,0)
+    test_df['TN'] = np.where((test_df['binary_label']==1) & (test_df['pred']==1),1,0)
+    test_df['TP'] = np.where((test_df['binary_label']==0) & (test_df['pred']==0),1,0)
 
     # add procedure information
     ROOT_FOLDER = '/gpfs3/well/papiez/shared/mimic-cxr-jpg/physionet.org/files/mimic-cxr-jpg/2.0.0'
@@ -210,7 +210,7 @@ def get_stats(df,col_name,filter_group_size=True,min_size = 0.01):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
     
-        accuracy = grouped_df.apply(lambda group: (group['binary_label'] == group['erm_pred']).mean())[mask]
+        accuracy = grouped_df.apply(lambda group: (group['binary_label'] == group['pred']).mean())[mask]
         precision = grouped_df.apply(lambda group: (group['TP']).sum()/((group['TP']).sum()+(group['FP']).sum()))[mask]
         recall = grouped_df.apply(lambda group: (group['TP']).sum()/((group['FN']).sum()+(group['TP']).sum()))[mask]
         n_groups = grouped_df.apply(lambda group: len(group))[mask]
@@ -258,20 +258,6 @@ def get_subgroup_stats(preds,col_name):
     
     return train_acc_list,train_precision_list, train_recall_list,train_f1_list
 
-def make_subplots(ax, metric_list, overall_metric_list, title,plot_gap):
-    if plot_gap:
-        ax.plot([x.max()-x.min() for x in metric_list])
-        ax.set_ylabel(title + ' gap')
-
-    else:
-        ax.plot([x.min() for x in metric_list])
-        ax.plot([x for x in overall_metric_list]) ### THIS IS THE WRONG MEAN - NOT OVERALL MEAN JUST SUBGROUP MEAN
-        ax.plot([x.max() for x in metric_list])
-        ax.legend(['min','mean','max'])
-        ax.set_ylabel(title)
-
-
-    ax.set_xlabel('Epoch')
 
 def make_results_df(train_preds,val_preds,subgroups):
     '''
@@ -283,6 +269,7 @@ def make_results_df(train_preds,val_preds,subgroups):
     for subgroup in subgroups:
         train_acc_list,train_precision_list, train_recall_list,train_f1_list = get_subgroup_stats(train_preds,subgroup)
         val_acc_list, val_precision_list, val_recall_list,val_f1_list = get_subgroup_stats(val_preds,subgroup)
+        # # AUC only works if you have enough examples of each class
         # train_auc = get_subgroup_auc(train_preds,subgroup)[-1]
         # val_auc = get_subgroup_auc(val_preds,subgroup)[-1]
         train_acc,train_precision, train_recall,train_f1 = train_acc_list[-1],train_precision_list[-1], train_recall_list[-1],train_f1_list[-1]
@@ -296,8 +283,30 @@ def make_results_df(train_preds,val_preds,subgroups):
         train_acc,val_acc,train_precision,val_precision,train_recall,val_recall = train_acc[-1],val_acc[-1],train_precision[-1],val_precision[-1],train_recall[-1],val_recall[-1] # only get last epoch
         # train_auc,val_auc = get_overall_auc(train_preds,val_preds)
         # train_auc,val_auc = train_auc[-1],val_auc[-1]
-        model_results_df = model_results_df.append({'Subgroup':subgroup,'Train Acc':train_acc,'Train Acc Gap':gap_train_acc,'Val Acc':val_acc,'Val Acc Gap':gap_val_acc,'Train Precision':train_precision,'Train Precision Gap':gap_train_precision,'Val Precision':val_precision,'Val Precision Gap':gap_val_precision,'Train Recall':train_recall,'Train Recall Gap':gap_train_recall,'Val Recall':val_recall,'Val Recall Gap':gap_val_recall}, ignore_index = True) #'Train AUC':train_auc, 'Train AUC Gap': gap_train_auc, 'Val AUC': val_auc, 'Val AUC Gap': gap_val_auc},ignore_index=True)
+
+        #model_results_df = model_results_df.append({'Subgroup':subgroup,'Train Acc':train_acc,'Train Acc Gap':gap_train_acc,'Val Acc':val_acc,'Val Acc Gap':gap_val_acc,'Train Precision':train_precision,'Train Precision Gap':gap_train_precision,'Val Precision':val_precision,'Val Precision Gap':gap_val_precision,'Train Recall':train_recall,'Train Recall Gap':gap_train_recall,'Val Recall':val_recall,'Val Recall Gap':gap_val_recall}, ignore_index = True) #'Train AUC':train_auc, 'Train AUC Gap': gap_train_auc, 'Val AUC': val_auc, 'Val AUC Gap': gap_val_auc},ignore_index=True)
     
+        new_row = pd.DataFrame({'Subgroup': [subgroup],
+                        'Train Acc': [train_acc],
+                        'Train Acc Gap': [gap_train_acc],
+                        'Val Acc': [val_acc],
+                        'Val Acc Gap': [gap_val_acc],
+                        'Train Precision': [train_precision],
+                        'Train Precision Gap': [gap_train_precision],
+                        'Val Precision': [val_precision],
+                        'Val Precision Gap': [gap_val_precision],
+                        'Train Recall': [train_recall],
+                        'Train Recall Gap': [gap_train_recall],
+                        'Val Recall': [val_recall],
+                        'Val Recall Gap': [gap_val_recall]}, 
+                       #'Train AUC': [train_auc], 
+                       #'Train AUC Gap': [gap_train_auc], 
+                       #'Val AUC': [val_auc], 
+                       #'Val AUC Gap': [gap_val_auc]}, 
+                       index=[0])
+
+        model_results_df = pd.concat([model_results_df, new_row], ignore_index=True)
+
     return model_results_df
 
 ### PLOTTING FUNCTIONS ###
@@ -413,6 +422,20 @@ def visualise_all_results(list_of_dfs,data_names,attribute,col_name,filter_group
     plt.tight_layout()
     plt.show()
 
+def make_subplots(ax, metric_list, overall_metric_list, title,plot_gap):
+    if plot_gap:
+        ax.plot([x.max()-x.min() for x in metric_list])
+        ax.set_ylabel(title + ' gap')
+
+    else:
+        ax.plot([x.min() for x in metric_list])
+        ax.plot([x for x in overall_metric_list]) ### THIS IS THE WRONG MEAN - NOT OVERALL MEAN JUST SUBGROUP MEAN
+        ax.plot([x.max() for x in metric_list])
+        ax.legend(['min','mean','max'])
+        ax.set_ylabel(title)
+
+
+    ax.set_xlabel('Epoch')
 
 def plot_subgroup_stats(train_preds, val_preds, col_name,plot_gap=False,plot_auc=False):
     train_acc_list, train_precision_list, train_recall_list, train_f1_list = get_subgroup_stats(train_preds, col_name)
