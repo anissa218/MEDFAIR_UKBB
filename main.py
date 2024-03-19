@@ -64,14 +64,22 @@ if __name__ == '__main__':
         if opt['cross_testing']:
             
             test_df = pd.DataFrame()
-            method_model_path = opt['cross_testing_model_path']
-            model_paths = glob.glob(method_model_path + '/cross_domain_*.pth')
-            for model_path in model_paths:
-                opt['cross_testing_model_path_single'] = model_path
+            if opt['cross_testing_model_path_single'] != '':
                 model = basics.get_model(opt, wandb)
                 pred_df = model.test()
-                
                 test_df = pd.concat([test_df, pred_df])
+                print('loaded model from: ', opt['cross_testing_model_path_single'])
+                
+            else:
+                method_model_path = opt['cross_testing_model_path']
+                model_paths = glob.glob(method_model_path + '/cross_domain_*.pth')
+
+                for model_path in model_paths:
+                    opt['cross_testing_model_path_single'] = model_path
+                    model = basics.get_model(opt, wandb)
+                    pred_df = model.test()
+                    
+                    test_df = pd.concat([test_df, pred_df])
             stat_test = basics.avg_eval(test_df, opt, 'cross_testing')
             
             model.log_wandb(stat_test.to_dict())

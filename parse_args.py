@@ -89,8 +89,8 @@ def collect_args(args=None):
     
     # cross-domain
     parser.add_argument('--cross_testing', action='store_true')
-    parser.add_argument('--source_domain', default='', choices=['CXP', 'MIMIC_CXR', 'ADNI', 'ADNI3T'])
-    parser.add_argument('--target_domain', default='', choices=['CXP', 'MIMIC_CXR', 'ADNI', 'ADNI3T'])
+    parser.add_argument('--source_domain', default='', choices=['CXP', 'MIMIC_CXR', 'ADNI', 'ADNI3T','UKBB_RET'])
+    parser.add_argument('--target_domain', default='', choices=['CXP', 'MIMIC_CXR', 'ADNI', 'ADNI3T','UKBB_RET'])
     parser.add_argument('--cross_testing_model_path', type=str, default='', help='path of the models of three random seeds')
     parser.add_argument('--cross_testing_model_path_single', type=str, default='', help='path of the models')
     

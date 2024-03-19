@@ -309,6 +309,47 @@ def make_results_df(train_preds,val_preds,subgroups):
 
     return model_results_df
 
+def make_test_results_df(train_preds,subgroups):
+    '''
+    Function for quantitative comparison. Still need to add AUC
+    Just looks at results at final epoch
+    '''
+    model_results_df = pd.DataFrame()
+
+    for subgroup in subgroups:
+        train_acc_list,train_precision_list, train_recall_list,train_f1_list = get_subgroup_stats(train_preds,subgroup)
+        # # AUC only works if you have enough examples of each class
+        train_auc = get_subgroup_auc(train_preds,subgroup)[-1]
+        train_acc,train_precision, train_recall,train_f1 = train_acc_list[-1],train_precision_list[-1], train_recall_list[-1],train_f1_list[-1]
+        gap_train_acc,gap_train_precision,gap_train_recall = train_acc.max()-train_acc.min(),train_precision.max()-train_precision.min(),train_recall.max()-train_recall.min()
+        
+        gap_train_auc = train_auc.max()-train_auc.min()
+
+
+        train_acc,val_acc,train_precision,val_precision,train_recall,val_recall=get_overall_metrics(train_preds,train_preds) # overall metrics, independent of subgroup
+        train_acc,val_acc,train_precision,val_precision,train_recall,val_recall = train_acc[-1],val_acc[-1],train_precision[-1],val_precision[-1],train_recall[-1],val_recall[-1] # only get last epoch
+        train_auc,val_auc = get_overall_auc(train_preds,train_preds)
+        train_auc = train_auc[-1]
+    
+        new_row = pd.DataFrame({'Subgroup': [subgroup],
+                        'Test Acc': [train_acc],
+                        'Test Acc Gap': [gap_train_acc],
+                        'Test Precision': [train_precision],
+                        'Test Precision Gap': [gap_train_precision],
+                        'Test Recall': [train_recall],
+                        'Test Recall Gap': [gap_train_recall],
+                        'Test AUC': [train_auc],
+                        'Test AUC Gap': [gap_train_auc]},
+                       #'Train AUC': [train_auc], 
+                       #'Train AUC Gap': [gap_train_auc], 
+                       #'Val AUC': [val_auc], 
+                       #'Val AUC Gap': [gap_val_auc]}, 
+                       index=[0])
+
+        model_results_df = pd.concat([model_results_df, new_row], ignore_index=True)
+
+    return model_results_df
+
 ### PLOTTING FUNCTIONS ###
 
 def visualise_results(test_df,attribute,col_name,filter_group_size=True,min_size = 0.01):
