@@ -57,7 +57,7 @@ def collect_args(args=None):
     parser.add_argument('--class_name', default='sex', choices=['sex', 'bmi', 'ckd', 'bp'])    
     parser.add_argument('--resume_path', type = str, default='', help = 'explicitly indentify checkpoint path to resume.')
     
-    parser.add_argument('--sensitive_name', default='Sex', choices=['Sex', 'Age', 'Race', 'skin_type', 'Insurance', 'Ethnicity'])
+    parser.add_argument('--sensitive_name', default='Sex', choices=['Sex', 'Age', 'Race', 'skin_type', 'Insurance', 'Ethnicity','Centre'])
     parser.add_argument('--is_3d', type=bool, default=False)
     parser.add_argument('--is_tabular', type=bool, default=False)
     

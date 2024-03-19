@@ -72,6 +72,8 @@ class BaseDataset(torch.utils.data.Dataset):
             self.A = np.asarray(self.dataframe['Insurance_binary'].values != 0).astype('float')
         elif self.sens_name == 'Ethnicity': # added extra attribute (not binary, need to check if OK)
             A = np.asarray(self.dataframe['Ethnicity'].values.astype('float'))
+        elif self.sens_name == 'Centre': # added extra attribute (not binary, need to check if OK)
+            A = np.asarray(self.dataframe['Centre'].values.astype('float'))
         else:
             raise ValueError("Does not contain {}".format(self.sens_name))
         return A
@@ -119,6 +121,11 @@ class BaseDataset(torch.utils.data.Dataset):
                 if self.sens_classes == 4:
                     groups = self.dataframe['Ethnicity'].values.astype('int')
                     group_array = groups.tolist()
+            elif self.sens_name == 'Centre':
+                if self.sens_classes == 6:
+                    groups = self.dataframe['Centre'].values.astype('int')
+                    group_array = groups.tolist()
+
             else:
                 raise ValueError("sensitive attribute does not defined in BaseDataset")
             
@@ -157,6 +164,9 @@ class BaseDataset(torch.utils.data.Dataset):
                 return self.dataframe['Age_multi4'].values.tolist()
             elif self.sens_name == 'Ethnicity': 
                 return self.dataframe['Ethnicity'].values.tolist()
+        elif self.sens_classes == 6:
+            if self.sens_name == 'Centre':
+                return self.dataframe['Centre'].values.tolist()
 
     def get_sensitive(self, sens_name, sens_classes, item):
         if sens_name == 'Sex':
@@ -189,6 +199,9 @@ class BaseDataset(torch.utils.data.Dataset):
         elif self.sens_name == 'Ethnicity':
             if sens_classes == 4:
                 sensitive = int(item['Ethnicity'])
+        elif self.sens_name == 'Centre':
+            if sens_classes == 6:
+                sensitive = int(item['Centre'])
         else:
             raise ValueError('Please check the sensitive attributes.')
         return sensitive

@@ -16,14 +16,6 @@ def train(model, opt):
     # record val metrics for hyperparameter selection
     pred_df = model.record_val()
     return pred_df
-
-class MyEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, torch.device):
-            return str(obj)
-        elif isinstance(obj, type):
-            return str(obj)
-        return super().default(obj)
     
 
 if __name__ == '__main__':
