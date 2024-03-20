@@ -65,6 +65,10 @@ def collect_args(args=None):
                         const=False, default=False,
                         help='if using smaller proportion of data') # anissa changes
     parser.add_argument('--dataset_size',type=float,default=100,help='size of dataset to be used relative to full dataset, should be 0.01, 0.02,0.1,0.2,0.5,1.0') # anissa changes
+    parser.add_argument('--adjust_centre', type=str2bool, nargs='?',
+                        const=False, default=False,
+                        help='if excluding one assessment centre') # anissa changes
+    parser.add_argument('--centre_name',type=float,default=0,help='centre to exclude from training, should be int from 0-5') # anissa changes
 
     # training 
     parser.add_argument('--random_seed', type=int, default=0)
@@ -218,8 +222,15 @@ def create_exerpiment_setting(opt, do_wandb=True):
         if opt['adjust_size'] == True:
             data_setting['adjust_size'] = True
             data_setting['dataset_size'] = float(opt['dataset_size'])
+        
         else:
             data_setting['adjust_size'] = False
+        
+        if opt['adjust_centre'] == True:
+            data_setting['adjust_centre'] = True
+            data_setting['centre_name'] = int(opt['centre_name'])
+        else:
+            data_setting['adjust_centre'] = False
 
     except:
         data_setting = {}

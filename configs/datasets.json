@@ -40,7 +40,7 @@
         "test_bmi_meta_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/splits/test-bmi.csv",
         "train_bp_meta_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/splits/train-bp-all-filt2.csv",
         "val_bp_meta_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/splits/val-bp-all-filt2.csv",
-        "test_bp_meta_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/splits/test-bp-filt2.csv",
+        "test_bp_meta_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/splits/test-bp-high-qual-filt2.csv",
         "train_bp_highqual_meta_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/splits/train-bp-filt.csv",
         "val_bp_meta_highqual_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/splits/val-bp-filt.csv",
         "test_bp_meta_highqual_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/splits/test-bp-filt.csv",

@@ -99,6 +99,15 @@ def get_dataset(opt):
             test_meta = pd.read_csv(test_name.split(".")[0] + str(size) + '.csv')
         
             print('got specific csvs of smaller size')
+        
+        elif data_setting['adjust_centre'] == True:
+            # very poor coding from me
+            i = data_setting['centre']
+            train_meta = pd.read_csv(f'/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/splits/train-bp-all-filt2-no-centre{i}.csv')
+            val_meta = pd.read_csv(f'/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/splits/val-bp-all-filt2-no-centre{i}.csv')
+            test_meta = pd.read_csv(f'/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/splits/test-bp-all-filt2-no-centre{i}.csv')
+        
+            print(f'got specific csvs excluding centre {i}')
     else:
         train_meta = pd.read_csv(data_setting['train_meta_path']) 
         val_meta = pd.read_csv(data_setting['val_meta_path'])
