@@ -1,9 +1,9 @@
-# MEDFAIR: Benchmarking Fairness for Medical Imaging
-Forked from [MEDFAIR](https://github.com/ys-zong/MEDFAIR/blob/main/): fairness benchmarking suite for medical imaging ([paper](https://arxiv.org/abs/2210.01725)). We are actively updating this repo and will incorporate more datasets and algorithms in the future. 
+# MEDFAIR: Benchmarking Fairness for Medical Imaging with Retinal Images from the UK Biobank
 
 
-## Documentation
-A detailed documentation can be found [here](https://github.com/ys-zong/MEDFAIR/blob/main/docs/index.md).
+Forked and adapted from [MEDFAIR](https://github.com/ys-zong/MEDFAIR/blob/main/): fairness benchmarking suite for medical imaging ([paper](https://arxiv.org/abs/2210.01725)). 
+
+See MEDFAIR documentation [here](https://github.com/ys-zong/MEDFAIR/blob/main/docs/index.md).
 
 ## Quick Start
 
@@ -19,18 +19,6 @@ conda activate fair_benchmark
 
 ### Dataset
 Due to the data use agreements, we cannot directly share the download link. Please register and download datasets using the links from the table below:
-
-| **Dataset**  | **Access**                                                                                    |
-|--------------|-----------------------------------------------------------------------------------------------|
-| CheXpert     | Original data: https://stanfordmlgroup.github.io/competitions/chexpert/                       |
-|              | Demographic data: https://stanfordaimi.azurewebsites.net/datasets/192ada7c-4d43-466e-b8bb-b81992bb80cf                                                                           |
-| MIMIC-CXR    | https://physionet.org/content/mimic-cxr-jpg/2.0.0/                                            |
-| PAPILA       | https://www.nature.com/articles/s41597-022-01388-1#Sec6                                       |
-| HAM10000     | https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/DBW86T               |
-| OCT          | https://people.duke.edu/~sf59/RPEDC_Ophth_2013_dataset.htm                                    |
-| Fitzpatrick17k | https://github.com/mattgroh/fitzpatrick17k                                                  |
-| COVID-CT-MD  |  https://doi.org/10.6084/m9.figshare.12991592                                                 |
-| ADNI 1.5T/3T | https://ida.loni.usc.edu/login.jsp?project=ADNI                                               | 
 
 
 ### Data Preprocessing
