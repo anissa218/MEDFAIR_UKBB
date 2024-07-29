@@ -1,4 +1,4 @@
-# MEDFAIR: Benchmarking Fairness for Medical Imaging with Retinal Images from the UK Biobank
+# Adapting MEDFAIR for analysis of biases in retinal images from the UK Biobank
 
 
 Forked and adapted from [MEDFAIR](https://github.com/ys-zong/MEDFAIR/blob/main/): fairness benchmarking suite for medical imaging ([paper](https://arxiv.org/abs/2210.01725)). 
