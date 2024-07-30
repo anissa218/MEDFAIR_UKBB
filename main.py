@@ -33,11 +33,6 @@ if __name__ == '__main__':
         for random_seed in random_seeds:
             print(opt['experiment'])
 
-            # temporary code
-            # with open('opt.json', 'w') as f:
-            #     json.dump(opt, f, cls=MyEncoder)
-            # print('dict saved')
-
             model = basics.get_model(opt, wandb)
 
             pred_df = train(model, opt)

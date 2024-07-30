@@ -207,8 +207,6 @@ def create_exerpiment_setting(opt, do_wandb=True):
     opt['optimizer_setting'] = optimizer_setting
 
     print('early stopping: ', opt['early_stopping'])
-
-    # opt['early_stopping'] = 10 #temporary fix
     
     optimizer_setting2 = {
         'optimizer': torch.optim.Adam,

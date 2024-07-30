@@ -111,38 +111,6 @@ class SimpleCNN(nn.Module):
         output = self.out(features)
         return output, features
 
-# class InceptionV3(cusResNet18):
-#     def __init__(self, n_classes, pretrained = True, disentangle = False):
-#         super(InceptionV3, self).__init__(n_classes, pretrained)
-#         net = torchvision.models.inception_v3(pretrained=pretrained)
-        
-#         net.fc = nn.Linear(net.fc.in_features, n_classes)
-       
-#         self.returnkey_avg = 'avgpool'
-#         self.returnkey_fc = 'fc'
-
-#         self.body = net
-#         # self.feature_extractor = create_feature_extractor(
-#         #     net, return_nodes={'avgpool': self.returnkey_avg, 'fc': self.returnkey_fc})
-
-#         print('using InceptionV3')
-    
-#     def forward(self, x):
-#         outputs = self.body(x)
-#         self.feature_extractor = create_feature_extractor(self.body, return_nodes={'avgpool': self.returnkey_avg, 'fc': self.returnkey_fc})
-#         if isinstance(outputs, tuple): # <-- inception output is a tuple (x, aux) during training but not in model.eval()
-#             outputs = outputs[0]
-#         features = self.feature_extractor(x) # hopefully this should work to get feature extraction
-#         return outputs, features[self.returnkey_avg].squeeze()
-
-#     def inference(self, x):
-#         outputs = self.body(x)
-#         self.feature_extractor = create_feature_extractor(self.body, return_nodes={'avgpool': self.returnkey_avg, 'fc': self.returnkey_fc})
-#         if isinstance(outputs, tuple): # <-- inception output is a tuple (x, aux) during training but not in model.eval()
-#             outputs = outputs[0]
-#         features = self.feature_extractor(x) # hopefully this should work to get feature extraction
-#         return outputs, features[self.returnkey_avg].squeeze()
-
 
 class InceptionV3(cusResNet18):
     def __init__(self, n_classes, pretrained = True, disentangle = False):
@@ -154,7 +122,6 @@ class InceptionV3(cusResNet18):
         self.returnkey_avg = 'avgpool'
         self.returnkey_fc = 'classifier'
         self.body = net
-        #self.body = create_feature_extractor(net, return_nodes={'classifier': self.returnkey_fc})
 
         print('using InceptionV3')
     
@@ -164,15 +131,10 @@ class InceptionV3(cusResNet18):
             outputs = outputs[0]
         return outputs, outputs
 
-    # def inference(self, x):
-    #     outputs = self.body(x)
-    #     if isinstance(outputs, tuple): # <-- inception output is a tuple (x, aux) during training but not in model.eval()
-    #         outputs = outputs[0]
-    #     return outputs, outputs
     def inference(self, x):
         outputs = self.body(x)
         self.feature_extractor = create_feature_extractor(self.body, return_nodes={'avgpool': self.returnkey_avg, 'fc': self.returnkey_fc})
         if isinstance(outputs, tuple): # <-- inception output is a tuple (x, aux) during training but not in model.eval()
             outputs = outputs[0]
-        features = self.feature_extractor(x) # hopefully this should work to get feature extraction
+        features = self.feature_extractor(x) # to get feature extraction to analyse image reprsentations
         return outputs, features[self.returnkey_avg].squeeze()
