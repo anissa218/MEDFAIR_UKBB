@@ -252,6 +252,7 @@ threadpoolctl==3.1.0
 tifffile==2022.2.9
 toml==0.10.2
 tomli==2.0.1
+torchio
 #torch==1.10.2+cu111
 #torchfile==0.1.0
 #torchsampler==0.1.2
@@ -290,10 +291,10 @@ zope-interface==5.4.0
 zope-sqlalchemy==1.6
 zstandard==0.17.0
 
-## conda packages I've manually added
-backcall
-certifi
-ipython_genutils
-pexpect
-pickleshare
-wcwidth
+## conda packages I've manually added:
+# backcall
+# certifi
+# ipython_genutils
+# pexpect
+# pickleshare
+# wcwidth
