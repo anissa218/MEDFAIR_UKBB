@@ -8,6 +8,7 @@ import sklearn.metrics as sklm
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import warnings
+from sklearn.metrics import roc_auc_score, balanced_accuracy_score
 from sklearn.manifold import TSNE
 
 
@@ -786,3 +787,40 @@ def conduct_tsne(features, test_preds, n_components=2):
     tsne_df['raw_pred_cat'] = test_preds['raw_pred'].values
     tsne_df['raw_pred_cat'] = pd.cut(tsne_df['raw_pred_cat'],bins=[0,0.2,0.4,0.6,0.8,1],labels=['0','1','2','3','4'])
     return tsne_df
+
+## CONDITION ON CERTAIN GROUPS ##
+
+def conditional_metrics(test_preds,grouped_cols,one_class=False):
+    # grouped_cols can be one or multiple col names
+    grouped_df = test_preds.groupby(grouped_cols)
+    accuracy = grouped_df.apply(lambda group: (group['binary_label'] == group['pred']).mean())
+    precision = grouped_df.apply(lambda group: (group['TP']).sum()/((group['TP']).sum()+(group['FP']).sum()))
+    recall = grouped_df.apply(lambda group: (group['TP']).sum()/((group['FN']).sum()+(group['TP']).sum()))
+    if one_class:
+        results_df = pd.DataFrame({
+        'Accuracy': accuracy,
+        'Precision': precision,
+        'Recall': recall
+        })
+    else:
+        auc = grouped_df.apply(lambda group:roc_auc_score(group['binary_label'], group['raw_pred']))
+        tnr = grouped_df.apply(lambda group: ((group['TN']).sum())/((group['TN']).sum()+(group['FP']).sum()))
+        results_df = pd.DataFrame({
+        'Accuracy': accuracy,
+        'AUC': auc,
+        'Precision': precision,
+        'Recall': recall,
+        'TNR': tnr
+        })
+    # to get average across multiple test_preds: df_mean = pd.concat(list_of_results_df).groupby(level=0).mean(), but not quite surw how to o this when there are two groupby cols
+    return results_df.round(3)
+
+def calculate_metrics(df, pred_col, label_col='binaryLabel'):
+    auc_col = 'raw_pred'
+    auc = roc_auc_score(df[label_col], df[auc_col])
+    accuracy = (df[pred_col] == df[label_col]).mean()
+    balanced_accuracy = balanced_accuracy_score(df[pred_col], df[label_col])
+    precision = ((df[pred_col] == 1) & (df[pred_col] == df[label_col])).sum() / df[pred_col].sum()
+    recall = ((df[pred_col] == 1) & (df[pred_col] == df[label_col])).sum() / df[label_col].sum()
+    tnr = ((df[pred_col] == 0) & (df[pred_col] == df[label_col])).sum() / (df[label_col] == 0).sum()
+    return {'AUC': auc, 'Accuracy': accuracy, 'Balanced Accuracy': balanced_accuracy, 'Precision': precision, 'Recall': recall, 'TNR': tnr}
