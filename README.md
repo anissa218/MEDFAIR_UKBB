@@ -28,7 +28,7 @@ conda activate fair_benchmark
 Due to data use agreements, the UKBB retinal images cannot be shared. For those with access, we use R eye images from Datafield 21015. The code could be easily adapted for other retinal imaging or medical imaging datasets.
 
 ### Data Preprocessing
-See `mynotebooks/UKBB Preprocessing.ipynb` for information on preprocessing of relevant sensitive atrtibutes, splitting into train/val/test sets, and pickling images.
+See `mynotebooks/UKBB Preprocessing.ipynb` for information on preprocessing of relevant sensitive attributes, splitting into train/val/test sets, and pickling images.
 
 After preprocessing, specify the paths of the metadata and pickle files in `configs/datasets.json`.
 
@@ -49,8 +49,9 @@ python main.py --experiment baseline --wandb_name [wandb_name] --data_folder [da
 See `parse_args.py` for more options.
 
 ### Results Analysis
-See `mynotebooks/UKBB Baseline Model Analysis' for an example analysis of the baseline (ERM) model, its disparities, and characterisation of its disparities (eg analysis of model feature representations etc.).
-See `mynotebooks/UKBB Mitigation Models Analysis' for an example analysis of the mitigation models, and comparison of their performance.
+See `mynotebooks/UKBB Baseline Model Analysis` for an example analysis of the baseline (ERM) model, its disparities, and characterisation of its disparities (eg analysis of model feature representations etc.).
+
+See `mynotebooks/UKBB Mitigation Models Analysis` for an example analysis of the mitigation models, and comparison of their performance.
 
 ## Citation
 Please consider citing our paper if you find this repo useful.
