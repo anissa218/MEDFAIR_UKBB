@@ -42,8 +42,8 @@ python main.py --experiment [experiment] --experiment_name [experiment_name] --d
 
 To reproduce experiments in the paper (replace experiment, sensitive_name, and sens_classes accordingly):
 
-For example, for running `ERM` in `HAM10000` dataset with `Sex` as the sensitive attribute:
-```python main.py --experiment baseline --wandb_name [wandb_name] --data_folder [data_folder] --early_stopping 10 --class_name adj_bp --dataset_name UKBB_RET --pretrained True --total_epochs 100 --sensitive_name Centre --batch_size 512 --sens_classes 6 --output_dim 1 --num_classes 1 --random_seed 42 --backbone InceptionV3 --lr 0.0005
+```python
+python main.py --experiment baseline --wandb_name [wandb_name] --data_folder [data_folder] --early_stopping 10 --class_name adj_bp --dataset_name UKBB_RET --pretrained True --total_epochs 100 --sensitive_name Centre --batch_size 512 --sens_classes 6 --output_dim 1 --num_classes 1 --random_seed 42 --backbone InceptionV3 --lr 0.0005
 ```
 
 See `parse_args.py` for more options.
