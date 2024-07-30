@@ -14,7 +14,7 @@ Python >= 3.8+ and Pytorch >=1.10 are required for running the code. Other neces
 ## Via pip:
 ```python
 cd MEDFAIR/
-pip install -r myrequirements.txt
+pip install -r my_requirements.txt
 ```
 
 ## Via conda:
