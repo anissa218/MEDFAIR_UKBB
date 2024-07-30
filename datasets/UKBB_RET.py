@@ -6,7 +6,7 @@ from datasets.BaseDataset import BaseDataset
 import cv2
 
 class UKBB_RET(BaseDataset):
-    def __init__(self, dataframe, path_to_pickles, sens_name, sens_classes, transform):
+    def __init__(self, dataframe, path_to_pickles, sens_name, sens_classes, transform,use_pkl=True):
         super(UKBB_RET, self).__init__(dataframe, path_to_pickles, sens_name, sens_classes, transform)
 
         """
@@ -23,25 +23,26 @@ class UKBB_RET(BaseDataset):
             index, image, label, and sensitive attribute.
         """
         
-        # # if you're using the pickled images
-        # with open(path_to_pickles, 'rb') as f: 
-        #     self.tol_images = pickle.load(f)
             
         self.A = self.set_A(sens_name)
         self.Y = (np.asarray(self.dataframe['binaryLabel'].values) > 0).astype('float')
         self.AY_proportion = None
-    
+        self.use_pkl = use_pkl
+        
+        if self.use_pkl:        # # if you're using the pickled images
+            with open(path_to_pickles, 'rb') as f: 
+                self.tol_images = pickle.load(f)
+                
     def __getitem__(self, idx):
         # get the item based on the index
         item = self.dataframe.iloc[idx]
-            
-        img = cv2.imread(item['image_path'],cv2.IMREAD_GRAYSCALE) #so it only has one channel
-    
-        img = cv2.resize(img, (256, 256))
-        img = Image.fromarray(img).convert('RGB') # converts image from 2 channel to 3 channel
 
-        # # if you're using pickled images:
-        # img = Image.fromarray(self.tol_images[idx]).convert('RGB')
+        if self.use_pkl:
+            img = Image.fromarray(self.tol_images[idx]).convert('RGB')
+        else:
+            img = cv2.imread(item['image_path'],cv2.IMREAD_GRAYSCALE) #so it only has one channel
+            img = cv2.resize(img, (256, 256))
+            img = Image.fromarray(img).convert('RGB') # converts image from 2 channel to 3 channel
 
         img = self.transform(img) # maybe should be doing different transforms for this but will leave for now
         

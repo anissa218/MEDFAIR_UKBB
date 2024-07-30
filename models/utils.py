@@ -4,10 +4,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from utils.evaluation import calculate_auc, calculate_metrics, get_pred_df
 import os
-
+import torch
+import torch.optim as optim
+from torch.optim.lr_scheduler import StepLR
 from importlib import import_module
 
-def standard_train(opt, network, optimizer, loader, _criterion, wandb):
+def standard_train(opt, network, optimizer, loader, _criterion, wandb,scheduler=None):
     """Train the model for one epoch"""
     train_loss, auc, no_iter = 0., 0., 0
     tol_output, tol_target, tol_sensitive, tol_index = [], [], [], []
@@ -39,6 +41,10 @@ def standard_train(opt, network, optimizer, loader, _criterion, wandb):
         tol_sensitive += sensitive_attr.cpu().data.numpy().tolist()
         tol_index += index.numpy().tolist()
 
+    if scheduler is not None:
+        print('scheduler step')
+        scheduler.step()
+
     auc = 100 * auc / no_iter
     train_loss /= no_iter
 
@@ -55,10 +61,12 @@ def standard_val(opt, network, loader, _criterion, sens_classes, wandb):
     val_loss, auc = 0., 0.
     no_iter = 0
     with torch.no_grad():
+
         for i, (images, targets, sensitive_attr, index) in enumerate(loader):
             images, targets, sensitive_attr = images.to(opt['device']), targets.to(opt['device']), sensitive_attr.to(
                 opt['device'])
             outputs, features = network.forward(images)
+
             loss = _criterion(outputs, targets)
             try:
                 val_loss += loss.item()
@@ -77,6 +85,7 @@ def standard_val(opt, network, loader, _criterion, sens_classes, wandb):
             if opt['log_freq'] and (i % opt['log_freq'] == 0)  and wandb != None:
                 wandb.log({'Validation loss': val_loss / no_iter, 'Validation AUC': auc / no_iter})
 
+
     auc = 100 * auc / no_iter
     val_loss /= no_iter
     log_dict, t_predictions, pred_df = calculate_metrics(tol_output, tol_target, tol_sensitive, tol_index, sens_classes)
@@ -89,14 +98,26 @@ def standard_test(opt, network, loader, _criterion, wandb):
     tol_output, tol_target, tol_sensitive, tol_index = [], [], [], []
 
     with torch.no_grad():
+        feature_vectors = []
         for i, (images, targets, sensitive_attr, index) in enumerate(loader):
             images, targets, sensitive_attr = images.to(opt['device']), targets.to(opt['device']), sensitive_attr.to(
                 opt['device'])
-            outputs, features = network.forward(images)
+            #outputs, features = network.forward(images) 
+            outputs, features = network.inference(images) 
+
+            feature_vectors.append(features.to('cpu'))
 
             tol_output += F.sigmoid(outputs).flatten().cpu().data.numpy().tolist()
             tol_target += targets.cpu().data.numpy().tolist()
             tol_sensitive += sensitive_attr.cpu().data.numpy().tolist()
             tol_index += index.numpy().tolist()
-            
+    
+        # save features from test inference
+        feature_tensor = torch.cat(feature_vectors)
+        torch.save(feature_tensor, os.path.join(opt['save_folder'], 'features.pt'))
+        index_tensor = torch.tensor(tol_index)
+        torch.save(index_tensor, os.path.join(opt['save_folder'], 'index.pt'))
+        print('saved features')
+
+
     return tol_output, tol_target, tol_sensitive, tol_index

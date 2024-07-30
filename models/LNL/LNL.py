@@ -103,7 +103,6 @@ class LNL(BaseNet):
             running_loss += loss_pred_cls.item()
             running_adv_loss += loss_pseudo_pred.item()
             running_MI += loss_pred_sensi.item()
-
             auc += calculate_auc(F.sigmoid(pred_label).cpu().data.numpy(), targets.cpu().data.numpy())
             no_iter += 1
             

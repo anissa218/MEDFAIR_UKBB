@@ -20,17 +20,26 @@ class GroupDRO(BaseNet):
         
         self.groupdro_alpha = opt['groupdro_alpha']
         self.groupdro_gamma = opt['groupdro_gamma']
+        self.groupdro_step = opt['groupdro_step']
+        self.adj = opt['groupdro_adj']
+        self.groupdro_step = opt['groupdro_step']
+
         self.register_buffer("q", torch.ones(self.sens_classes))
         
         self.criterion = nn.BCEWithLogitsLoss(reduction = 'none')
         
-        generalization_adjustment = "0"
-        adjustments = [float(c) for c in generalization_adjustment.split(',')]
+        #generalization_adjustment = "0"
+        #adjustments = [float(c) for c in generalization_adjustment.split(',')]
+        adjustments = [self.adj]
         assert len(adjustments) in (1, self.train_data.sens_classes)
         if len(adjustments)==1:
             adjustments = np.array(adjustments* self.train_data.sens_classes)
         else:
             adjustments = np.array(adjustments)
+        if self.groupdro_alpha != 1:
+            btl=True
+        else:
+            btl=False
         self.train_loss_computer = LossComputer(
             criterion = self._criterion,
             is_robust=True,
@@ -38,9 +47,9 @@ class GroupDRO(BaseNet):
             alpha=self.groupdro_alpha,
             gamma=self.groupdro_gamma,
             adj=adjustments,
-            step_size=0.01,
+            step_size=self.groupdro_step,
             normalize_loss=False,
-            btl=False,
+            btl=btl,
             min_var_weight=0)
     
     def set_network(self, opt):
@@ -65,13 +74,18 @@ class GroupDRO(BaseNet):
         
         running_loss, auc = 0., 0.
         no_iter = 0
+        dro_results = {}
+        group_losses, mean_losses, losses = [], [], []
         for i, (images, targets, sensitive_attr, index) in enumerate(loader):
             images, targets, sensitive_attr = images.to(self.device), targets.to(self.device), sensitive_attr.to(self.device)
             self.optimizer.zero_grad()
             outputs, features = self.network.forward(images)
             
-            loss = self.train_loss_computer.loss(outputs, targets, sensitive_attr, is_training = True)
-            
+            group_loss,mean_loss,loss = self.train_loss_computer.loss(outputs, targets, sensitive_attr, is_training = True)
+            # group loss is list of losses for each group, mean loss is avg for each sample, loss is robust DRO loss
+            group_losses.append(group_loss)
+            mean_losses.append(mean_loss)
+            losses.append(loss)
             running_loss += loss.item()
             
             loss.backward()
@@ -81,8 +95,19 @@ class GroupDRO(BaseNet):
             no_iter += 1
             
             if self.log_freq and (i % self.log_freq == 0):
-                self.wandb.log({'Training loss': running_loss / (i+1), 'Training AUC': auc / (i+1)})
-
+                try:
+                    self.wandb.log({'Training loss': running_loss / (i+1), 'Training AUC': auc / (i+1)})
+                except:
+                    pass
+        dro_results['group_losses'] = group_losses
+        dro_results['mean_losses'] = mean_losses
+        dro_results['losses'] = losses
+        # save dict
+        torch.save(dro_results, os.path.join(self.save_path, 'dro_loss_epoch_' + str(self.epoch) + '.pth'))
+        
+        print('scheduler step')
+        self.scheduler.step()
+        
         running_loss /= no_iter
         auc = auc / no_iter
         print('Training epoch {}: AUC:{}'.format(self.epoch, auc))
@@ -101,7 +126,7 @@ class GroupDRO(BaseNet):
                 images, targets, sensitive_attr = images.to(self.device), targets.to(self.device), sensitive_attr.to(
                     self.device)
                 outputs, features = self.network.inference(images)
-                loss = self.train_loss_computer.loss(outputs, targets, sensitive_attr, is_training = False)
+                group_loss,mean_loss,loss = self.train_loss_computer.loss(outputs, targets, sensitive_attr, is_training = False)
                 val_loss += loss.item()
                 
                 tol_output += F.sigmoid(outputs).flatten().cpu().data.numpy().tolist()
@@ -113,7 +138,10 @@ class GroupDRO(BaseNet):
                                                targets.cpu().data.numpy())
                 no_iter += 1
                 if self.log_freq and (i % self.log_freq == 0):
-                    self.wandb.log({'Validation loss': val_loss / (i+1), 'Validation AUC': auc / (i+1)})
+                    try:
+                        self.wandb.log({'Validation loss': val_loss / (i+1), 'Validation AUC': auc / (i+1)})
+                    except:
+                        pass
     
         auc = 100 * auc / no_iter
         val_loss /= no_iter
@@ -130,22 +158,31 @@ class GroupDRO(BaseNet):
         self.network.eval()
         tol_output, tol_target, tol_sensitive, tol_index = [], [], [], []
         with torch.no_grad():
+            feature_vectors = []
+
             for i, (images, targets, sensitive_attr, index) in enumerate(loader):
                 images, targets, sensitive_attr = images.to(self.device), targets.to(self.device), sensitive_attr.to(
                     self.device)
                 outputs, features = self.network.inference(images)
-    
+                feature_vectors.append(features.to('cpu'))
+
                 tol_output += F.sigmoid(outputs).flatten().cpu().data.numpy().tolist()
                 tol_target += targets.cpu().data.numpy().tolist()
                 tol_sensitive += sensitive_attr.cpu().data.numpy().tolist()
                 tol_index += index.numpy().tolist()
-
         
+        # save features from test inference
+        feature_tensor = torch.cat(feature_vectors)
+        torch.save(feature_tensor, os.path.join(self.save_path, 'features.pt'))
+        index_tensor = torch.tensor(tol_index)
+        torch.save(index_tensor, os.path.join(self.save_path, 'index.pt'))
+        print('saved features')
+
         log_dict, t_predictions, pred_df = calculate_metrics(tol_output, tol_target, tol_sensitive, tol_index, self.sens_classes)
         overall_FPR, overall_FNR, FPRs, FNRs = calculate_FPR_FNR(pred_df, self.test_meta, self.opt)
         log_dict['Overall FPR'] = overall_FPR
         log_dict['Overall FNR'] = overall_FNR
-        pred_df.to_csv(os.path.join(self.save_path, self.experiment + '_pred.csv'), index = False)
+        pred_df.to_csv(os.path.join(self.save_path, self.experiment + 'pred.csv'), index = False)
         #basics.save_results(t_predictions, tol_target, s_prediction, tol_sensitive, self.save_path)
         for i, FPR in enumerate(FPRs):
             log_dict['FPR-group_' + str(i)] = FPR

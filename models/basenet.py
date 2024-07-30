@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import torch.nn.functional as F
 import torch
+import torch.optim as optim
+from torch.optim.lr_scheduler import StepLR
 import os
 import random
 from datetime import datetime
@@ -62,12 +64,14 @@ class BaseNet(nn.Module):
             #self.in_features = 10000
             self.in_features = 146
         
-        self.criterion = nn.BCEWithLogitsLoss()
+        self.pos_weight = float(opt['pos_weight'])
+        self.criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([self.pos_weight]).to(self.device))
         
         self.cross_testing = opt['cross_testing']
         if self.cross_testing:
             self.load_path = opt['cross_testing_model_path_single']
-    
+
+
     def set_data(self, opt):
         """Set up the dataloaders"""
         self.train_data, self.val_data, self.test_data, self.train_loader, self.val_loader, self.test_loader, self.val_meta, self.test_meta = get_dataset(opt)
@@ -79,6 +83,9 @@ class BaseNet(nn.Module):
             lr=optimizer_setting['lr'],
             weight_decay=optimizer_setting['weight_decay']
         )
+        self.scheduler = StepLR(self.optimizer, step_size=10, gamma=0.1) #anissa added this
+
+        print('Optimizer setting: ', optimizer_setting)
 
     def _criterion(self, output, target):
         return self.criterion(output, target)
@@ -123,6 +130,7 @@ class BaseNet(nn.Module):
         auc, val_loss, log_dict, pred_df = standard_val(self.opt, self.network, loader, self._criterion, self.sens_classes, self.wandb)
         
         # anissa changes: save val pred_df
+        print(os.path.join(self.save_path, 'pretrained_epoch_' + str(self.epoch)+'_val_pred.csv'))
         if self.pretrained:
             pred_df.to_csv(os.path.join(self.save_path, 'pretrained_epoch_' + str(self.epoch)+'_val_pred.csv'), index = False)
         else:
@@ -144,9 +152,9 @@ class BaseNet(nn.Module):
         log_dict['Overall FNR'] = overall_FNR
         
         if self.pretrained:
-            pred_df.to_csv(os.path.join(self.save_path, 'pretrained_test_pred.csv'), index = False)
+            pred_df.to_csv(os.path.join(self.save_path, 'pretrained_pred.csv'), index = False)
         else:
-            pred_df.to_csv(os.path.join(self.save_path, 'not_pretrained_test_pred.csv'), index = False)
+            pred_df.to_csv(os.path.join(self.save_path, 'not_pretrained_pred.csv'), index = False)
         
         for i, FPR in enumerate(FPRs):
             log_dict['FPR-group_' + str(i)] = FPR
@@ -209,6 +217,7 @@ class BaseNet(nn.Module):
         else:
             state_dict = torch.load(self.load_path)
             print('Testing, loaded model from ', self.load_path)
+        print('state dict keys: ', state_dict.keys())
         self.network.load_state_dict(state_dict['model'])
 
         log_dict = self._test(self.test_loader)
@@ -230,8 +239,9 @@ class BaseNet(nn.Module):
         for i, (images, targets, sensitive_attr, index) in enumerate(self.test_loader):
             images, targets, sensitive_attr = images.to(self.opt['device']), targets.to(self.opt['device']), sensitive_attr.to(
                 self.opt['device'])
-            outputs, features = self.network.forward(images)
-
+            #outputs, features = self.network.forward(images)
+            outputs, features = self.network.inference(images)
+            
             tol_output += F.sigmoid(outputs).flatten().cpu().data.numpy().tolist()
             tol_target += targets.cpu().data.numpy().tolist()
             tol_sensitive += sensitive_attr.cpu().data.numpy().tolist()

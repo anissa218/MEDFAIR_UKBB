@@ -60,6 +60,9 @@ class DomainInd(baseline):
         
         if self.log_freq and (i % self.log_freq == 0):
             self.wandb.log({'Training loss': train_loss / (i+1), 'Training AUC': auc / (i+1)})
+        
+        print('scheduler step')
+        self.scheduler.step()
 
         auc = 100 * auc / no_iter
         train_loss /= no_iter

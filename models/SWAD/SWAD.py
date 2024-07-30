@@ -3,6 +3,7 @@ from datetime import datetime
 import pandas as pd
 import torch
 import torch.nn.functional as F
+from torch.optim.lr_scheduler import StepLR
 from utils import basics
 from utils.evaluation import calculate_auc, calculate_metrics, calculate_FPR_FNR
 from models.SWA import SWA
@@ -63,6 +64,8 @@ class SWAD(SWA):
             lr=optimizer_setting['lr'],
             weight_decay=optimizer_setting['weight_decay']
         )
+        self.scheduler = StepLR(self.optimizer, step_size=10, gamma=0.1) #anissa added this
+
         
     def _train(self, loader):
         """Train the model for one epoch"""
@@ -92,6 +95,9 @@ class SWAD(SWA):
              
             if self.log_freq and (i % self.log_freq == 0):
                 self.wandb.log({'Training loss': train_loss / (i+1), 'Training AUC': auc / (i+1)})
+        
+        print('scheduler step')
+        self.scheduler.step()
         
         auc = 100 * auc / no_iter
         train_loss /= no_iter
@@ -220,22 +226,30 @@ class SWAD(SWA):
         tol_output, tol_target, tol_sensitive, tol_index = [], [], [], []
     
         with torch.no_grad():
+            feature_vectors = []
             for i, (images, targets, sensitive_attr, index) in enumerate(loader):
                 images, targets, sensitive_attr = images.to(self.device), targets.to(self.device), sensitive_attr.to(
                     self.device)
-                outputs, _ = self.swad_model(images)
+                outputs, features = self.swad_model(images)
+                feature_vectors.append(features.to('cpu'))
                 
                 tol_output += F.sigmoid(outputs).flatten().cpu().data.numpy().tolist()
                 tol_target += targets.cpu().data.numpy().tolist()
                 tol_sensitive += sensitive_attr.cpu().data.numpy().tolist()
                 tol_index += index.numpy().tolist()
                 
-        
+            feature_tensor = torch.cat(feature_vectors)
+            torch.save(feature_tensor, os.path.join(self.save_path, 'features.pt'))
+            index_tensor = torch.tensor(tol_index)
+            torch.save(index_tensor, os.path.join(self.save_path, 'index.pt'))
+            print('saved features')
+
         log_dict, t_predictions, pred_df = calculate_metrics(tol_output, tol_target, tol_sensitive, tol_index, self.sens_classes)
         overall_FPR, overall_FNR, FPRs, FNRs = calculate_FPR_FNR(pred_df, self.test_meta, self.opt)
         log_dict['Overall FPR'] = overall_FPR
         log_dict['Overall FNR'] = overall_FNR
-        
+        pred_df.to_csv(os.path.join(self.save_path, self.experiment + 'test_pred.csv'), index = False)
+
         for i, FPR in enumerate(FPRs):
             log_dict['FPR-group_' + str(i)] = FPR
         for i, FNR in enumerate(FNRs):

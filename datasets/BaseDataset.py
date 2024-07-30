@@ -63,7 +63,10 @@ class BaseDataset(torch.utils.data.Dataset):
         if sens_name == 'Sex':
             A = np.asarray(self.dataframe['Sex'].values != 'M').astype('float')
         elif sens_name == 'Age':
-            A = np.asarray(self.dataframe['Age_binary'].values.astype('int') == 1).astype('float')
+            if self.sens_classes == 4:
+                A = np.asarray(self.dataframe['Age_multi4'].values.astype('float'))
+            else:
+                A = np.asarray(self.dataframe['Age_binary'].values.astype('int') == 1).astype('float')
         elif sens_name == 'Race':
             A = np.asarray(self.dataframe['Race'].values == 'White').astype('float')
         elif self.sens_name == 'skin_type':
@@ -74,12 +77,14 @@ class BaseDataset(torch.utils.data.Dataset):
             A = np.asarray(self.dataframe['Ethnicity'].values.astype('float'))
         elif self.sens_name == 'Centre': # added extra attribute (not binary, need to check if OK)
             A = np.asarray(self.dataframe['Centre'].values.astype('float'))
+        elif self.sens_name == 'Random':
+            A = np.asarray(self.dataframe['Random'].values.astype('float'))
         else:
             raise ValueError("Does not contain {}".format(self.sens_name))
         return A
 
     def get_weights(self, resample_which):
-        sens_attr, group_num = self.group_counts(resample_which)
+        sens_attr, group_num = self.group_counts(resample_which) #sens_attr is array of sens_attr membership for each sample
         group_weights = [1/x.item() for x in group_num]
         sample_weights = [group_weights[int(i)] for i in sens_attr]
         return sample_weights
@@ -122,9 +127,13 @@ class BaseDataset(torch.utils.data.Dataset):
                     groups = self.dataframe['Ethnicity'].values.astype('int')
                     group_array = groups.tolist()
             elif self.sens_name == 'Centre':
-                if self.sens_classes == 6:
+                if self.sens_classes == 6 or self.sens_classes == 5:
                     groups = self.dataframe['Centre'].values.astype('int')
                     group_array = groups.tolist()
+            elif self.sens_name == 'Random':
+                if self.sens_classes == 4:
+                    groups = self.dataframe['Random'].values.astype('int')
+                    group_array = groups.tolist()           
 
             else:
                 raise ValueError("sensitive attribute does not defined in BaseDataset")
@@ -143,7 +152,7 @@ class BaseDataset(torch.utils.data.Dataset):
         
         self._group_array = torch.LongTensor(group_array)
         if resample_which == 'group':
-            self._group_counts = (torch.arange(self.sens_classes).unsqueeze(1)==self._group_array).sum(1).float()
+            self._group_counts = (torch.arange(self.sens_classes).unsqueeze(1)==self._group_array).sum(1).float() # tensor with group counts for each sens attribute class
         elif resample_which == 'balanced':
             self._group_counts = (torch.arange(num_labels * num_groups).unsqueeze(1)==self._group_array).sum(1).float()
         elif resample_which == 'class':
@@ -158,7 +167,10 @@ class BaseDataset(torch.utils.data.Dataset):
         if self.sens_classes == 2:
             return self.A
         elif self.sens_classes == 5:
-            return self.dataframe['Age_multi'].values.tolist()
+            if self.sens_name == 'Age':
+                return self.dataframe['Age_multi'].values.tolist()
+            elif self.sens_name == 'Centre':
+                return self.dataframe['Centre'].values.tolist()
         elif self.sens_classes == 4:
             if self.sens_name == 'Age':
                 return self.dataframe['Age_multi4'].values.tolist()
@@ -202,6 +214,11 @@ class BaseDataset(torch.utils.data.Dataset):
         elif self.sens_name == 'Centre':
             if sens_classes == 6:
                 sensitive = int(item['Centre'])
+            elif sens_classes == 5:
+                sensitive = int(item['Centre'])
+        elif self.sens_name == 'Random':
+            if sens_classes == 4:
+                sensitive = int(item['Random'])
         else:
             raise ValueError('Please check the sensitive attributes.')
         return sensitive

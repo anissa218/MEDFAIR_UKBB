@@ -7,13 +7,11 @@ from scipy.interpolate import interp1d
 import warnings
 warnings.filterwarnings('ignore')
 
-
-# adapted from https://github.com/LalehSeyyed/Underdiagnosis_NatMed/blob/main/CXP/classification/predictions.py
-# and https://github.com/MLforHealth/CXR_Fairness/blob/master/cxr_fairness/metrics.py
 def find_threshold(tol_output, tol_target):
-    # to find this thresold, first we get the precision and recall without this, from there we calculate f1 score,
-    # using f1score, we found this theresold which has best precsision and recall.  Then this threshold activation
-    # are used to calculate our binary output.
+    '''
+    Adapted previous find threshold function so that it takes into account TNR in addition to precision and recall rate
+    '''
+
 
     PRED_LABEL = ['disease']
 
@@ -37,17 +35,79 @@ def find_threshold(tol_output, tol_target):
         thisrow['bestthr'] = np.nan
 
         p, r, t = sklm.precision_recall_curve(tol_target, tol_output)
-        # Choose the best threshold based on the highest F1 measure
+        p =p[:-1] # remove last precision and recall value bc sklearn just adds them for y axis alignment of graph (doesn't correspond to a threshold)
+        r = r[:-1]
+
+        tnrs=[]
+        
+        # some changes to allow function to work properly (probably quite slow)
+        tol_output = pd.Series(tol_output)
+        tol_target = [item for sublist in tol_target for item in sublist]
+        tol_target = pd.Series(tol_target)
+
+        for threshold in t:  # compute TNR for every possible threshold
+            tol_output_binary = np.where(tol_output > threshold, 1, 0)
+            tnr = (((tol_output_binary == 0) & (tol_target == 0)).sum())/((tol_target == 0).sum())
+            tnrs.append(tnr)
+
+        # Choose the best threshold based on the highest F1 measure and lowest TNR
         f1 = np.multiply(2, np.divide(np.multiply(p, r), np.add(r, p)))
-        bestthr = t[np.where(f1 == max(f1))]
+        score = f1+np.multiply(0.25,tnrs)
+
+        bestthr = t[np.where(score == max(score))]
         thrs.append(bestthr)
         
         thisrow['bestthr'] = bestthr[0]
 
     return bestthr[0]
 
+# # adapted from https://github.com/LalehSeyyed/Underdiagnosis_NatMed/blob/main/CXP/classification/predictions.py
+# # and https://github.com/MLforHealth/CXR_Fairness/blob/master/cxr_fairness/metrics.py
+# def find_threshold(tol_output, tol_target):
+#     # to find this thresold, first we get the precision and recall without this, from there we calculate f1 score,
+#     # using f1score, we found this theresold which has best precsision and recall.  Then this threshold activation
+#     # are used to calculate our binary output.
+
+#     PRED_LABEL = ['disease']
+
+#     # create empty dfs
+#     thrs = []            
+        
+#     for j in range(0, len(tol_output)):
+#         thisrow = {}
+#         truerow = {}
+
+#         # iterate over each entry in prediction vector; each corresponds to
+#         # individual label
+#         for k in range(len(PRED_LABEL)):
+#             thisrow["prob_" + PRED_LABEL[k]] = tol_output[j]
+#             truerow[PRED_LABEL[k]] = tol_target[j]
+           
+#     for column in PRED_LABEL:
+        
+#         thisrow = {}
+#         thisrow['label'] = column
+#         thisrow['bestthr'] = np.nan
+
+#         p, r, t = sklm.precision_recall_curve(tol_target, tol_output)
+#         # Choose the best threshold based on the highest F1 measure
+#         f1 = np.multiply(2, np.divide(np.multiply(p, r), np.add(r, p)))
+#         bestthr = t[np.where(f1 == max(f1))]
+#         thrs.append(bestthr)
+        
+#         thisrow['bestthr'] = bestthr[0]
+
+#     return bestthr[0]
+
 
 def calculate_auc(prediction, labels):
+    # does prediction contain a nan?
+    if np.isnan(prediction).any():
+        print('there is a nan! replacing with 0')
+        prediction = np.nan_to_num(prediction)
+    if np.isnan(labels).any():
+        print('there is a nan in labels! replacing with 0')
+        prediction = np.nan_to_num(labels)
     fpr, tpr, thresholds = sklm.roc_curve(labels, prediction, pos_label=1)
     auc = sklm.auc(fpr, tpr)
     return auc
@@ -88,6 +148,14 @@ def calculate_FPR_FNR(pred_df, test_meta, opt):
     elif sens_attrs == 'Ethnicity':
         if opt['sens_classes'] == 4:
             sens_attr_name = 'Ethnicity'
+        sens = np.arange(0, opt['sens_classes']).tolist()
+    elif sens_attrs == 'Centre':
+        if opt['sens_classes'] == 6 or opt['sens_classes'] == 5:
+            sens_attr_name = 'Centre'
+        sens = np.arange(0, opt['sens_classes']).tolist()
+    elif sens_attrs == 'Random':
+        if opt['sens_classes'] == 4:
+            sens_attr_name = 'Random'
         sens = np.arange(0, opt['sens_classes']).tolist()
     else:
         raise ValueError("{} not defined".format(sens_attrs))
@@ -159,7 +227,11 @@ def conditional_AUC_multi(preds, labels, attrs, sens_classes):
     assert preds.shape == labels.shape and labels.shape == attrs.shape
     
     aucs = []
-    for i in range(sens_classes):
+    attrs_list = list(set(attrs.tolist())) # try this for when the attributes aren't exactly 0 to sens_classes
+    print(attrs_list)
+
+    #for i in range(sens_classes):
+    for i in attrs_list:
 
         idx = attrs == i
 
@@ -197,9 +269,11 @@ def conditional_errors_multi(preds, labels, attrs, sens_classes):
     #print(preds.shape, labels.shape, attrs.shape)
     assert preds.shape == labels.shape and labels.shape == attrs.shape
     cls_error = 1 - np.mean((preds == labels).astype('float'))
-    
+    attrs_list = list(set(attrs.tolist())) # try this for when the attributes aren't exactly 0 to sens_classes
+
     errors = []
-    for i in range(sens_classes):
+    #for i in range(sens_classes):
+    for i in attrs_list:
         idx = attrs == i
         error = 1 - np.mean((preds[idx] == labels[idx]).astype('float'))
         errors.append(error.item())
@@ -260,7 +334,9 @@ def fnr_fpr_spe_sens_groups(preds, labels, attrs, sens_classes, specificity_val 
     tpr_at_tnrs = []
     fnrs, fprs, recalls, specificitys = [], [], [], []
     eces, bces = [], []
-    for i in range(sens_classes):
+    attrs_list = list(set(attrs.tolist())) # try this for when the attributes aren't exactly 0 to sens_classes
+
+    for i in attrs_list:
         idx = attrs == i
         tpr_at_tnrs.append(sensitivity_at_specificity(preds[idx], labels[idx], attrs[idx], specificity = specificity_val))
         fnrs.append(fnr_at_threshold(preds[idx], labels[idx], threshold = 0.5))

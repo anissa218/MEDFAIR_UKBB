@@ -12,3 +12,6 @@ from datasets.COVID_CT_MD import COVID_CT_MD
 from datasets.MIMIC_III import MIMIC_III
 from datasets.eICU import eICU
 from datasets.UKBB_RET import UKBB_RET
+from datasets.UKBB_RET_REG import UKBB_RET_REG
+from datasets.MNIST import MNIST
+

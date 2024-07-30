@@ -2,6 +2,9 @@ from models.utils import standard_train
 from models.basenet import BaseNet
 from importlib import import_module
 import os
+import torch
+import torch.optim as optim
+from torch.optim.lr_scheduler import StepLR
 
 
 class baseline(BaseNet):
@@ -30,7 +33,7 @@ class baseline(BaseNet):
         """Train the model for one epoch"""
 
         self.network.train()
-        auc, train_loss,pred_df = standard_train(self.opt, self.network, self.optimizer, loader, self._criterion, self.wandb)
+        auc, train_loss,pred_df = standard_train(self.opt, self.network, self.optimizer, loader, self._criterion, self.wandb, self.scheduler) #  if you don't add scheduler as an arg it doesn't run
 
         print('Training epoch {}: AUC:{}'.format(self.epoch, auc))
         print('Training epoch {}: loss:{}'.format(self.epoch, train_loss))

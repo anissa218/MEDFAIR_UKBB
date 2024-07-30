@@ -12,6 +12,7 @@ import models.SWA
 import models.SWAD
 import models.SAM
 import models.GSAM
+import models.Regression
 
 import models.SAMSWAD
 

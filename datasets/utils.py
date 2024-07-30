@@ -6,6 +6,7 @@ import pandas as pd
 import random
 import torchio as tio
 from utils.spatial_transforms import ToTensor
+import os
 
 from torchvision.transforms._transforms_video import (
     NormalizeVideo,
@@ -46,30 +47,59 @@ def get_dataset(opt):
         ])
     elif opt['is_tabular']:
         pass
-    else:
+    elif opt['is_small']:
+        print('is small')
         if data_setting['augment']:
             transform_train = transforms.Compose([
-                transforms.Resize(256),
+                #transforms.Resize(28),
+                transforms.ToTensor(), # tried putting ToTEnsor first
                 transforms.RandomHorizontalFlip(),
 				transforms.RandomVerticalFlip(), #anissa
 				transforms.RandomRotation((-15, 15)),
-                transforms.RandomCrop((224, 224)),
+                #transforms.RandomCrop((28, 28)), # effectively no random cropping
+                #transforms.ColorJitter(0.3,0.3,0.3), #anissa: brightness saturation, contrast
+                transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 2)), #anissa, maybe this is too much
+                transforms.Normalize(mean=[0.45],std=[0.225]),
+            ])
+        else:
+            transform_train = transforms.Compose([
+                #transforms.Resize(28),
+                #transforms.CenterCrop(28),
+                transforms.ToTensor(),
+                #transforms.Normalize(mean=[0.45],std=[0.225]),
+            ])
+    
+        transform_test = transforms.Compose([
+            #transforms.Resize(28),
+            #transforms.CenterCrop(28),
+            transforms.ToTensor(),
+            #transforms.Normalize(mean=[0.45],std=[0.225]),
+        ])
+    else:
+        if data_setting['augment']:
+            transform_train = transforms.Compose([
+                transforms.Resize(299),
+                transforms.RandomHorizontalFlip(),
+				transforms.RandomVerticalFlip(), #anissa
+				transforms.RandomRotation((-15, 15)),
+                #transforms.RandomCrop((224, 224)),
                 transforms.ColorJitter(0.3,0.3,0.3), #anissa: brightness saturation, contrast
                 transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 2)), #anissa, maybe this is too much
                 transforms.ToTensor(),
                 normalize,
             ])
         else:
+            print('no augmentation')
             transform_train = transforms.Compose([
-                transforms.Resize(256),
-                transforms.CenterCrop(224),
+                transforms.Resize(299),
+                #transforms.CenterCrop(224),
                 transforms.ToTensor(),
                 normalize,
             ])
     
         transform_test = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
+            transforms.Resize(299),
+            #transforms.CenterCrop(224),
             transforms.ToTensor(),
             normalize,
         ])
@@ -82,32 +112,21 @@ def get_dataset(opt):
         
     image_path = data_setting['image_feature_path']
 
-    if opt['dataset_name'] == 'UKBB_RET': # account for having differnet csvs (different binary labels) depending on what prediction task you are doing
+    if opt['dataset_name'] == 'UKBB_RET' or opt['dataset_name'] == 'MNIST': # account for having differnet csvs (different binary labels) depending on what prediction task you are doing
+        
         class_name = opt['class_name']
-        train_meta = pd.read_csv(data_setting['train_' + class_name+ '_meta_path']) 
-        val_meta = pd.read_csv(data_setting['val_' + class_name+ '_meta_path'])
-        test_meta = pd.read_csv(data_setting['test_' + class_name+ '_meta_path'])
-        print('loaded dataset ', opt['dataset_name'], ' with class name ', class_name)
-        if data_setting['adjust_size'] == True:
-            train_name = data_setting['train_' + class_name+ '_meta_path']
-            val_name = data_setting['val_' + class_name+ '_meta_path']
-            test_name = data_setting['test_' + class_name+ '_meta_path']
-            
-            size = data_setting['dataset_size']
-            train_meta = pd.read_csv(train_name.split(".")[0] + str(size) + '.csv')
-            val_meta = pd.read_csv(val_name.split(".")[0] + str(size) + '.csv')
-            test_meta = pd.read_csv(test_name.split(".")[0] + str(size) + '.csv')
+        if class_name: # empty strings are evaluated to falsy
+            class_name = '_' + class_name # this should mean that for MNIST dataset it still works if class_name is empty
+        root_path = data_setting['root_path']
+        data_folder = opt['data_folder'] # to implement!
+
+        train_meta = pd.read_csv(os.path.join(root_path,data_folder,data_setting['train' + class_name+ '_meta_path'])) 
+        val_meta = pd.read_csv(os.path.join(root_path,data_folder,data_setting['val' + class_name+ '_meta_path'])) 
+        test_meta = pd.read_csv(os.path.join(root_path,data_folder,data_setting['test' + class_name+ '_meta_path'])) 
+
+        print('loaded dataset ', opt['dataset_name'], 'with folder name ', data_folder, ' and with class name ', class_name)
         
-            print('got specific csvs of smaller size')
-        
-        elif data_setting['adjust_centre'] == True:
-            # very poor coding from me
-            i = data_setting['centre']
-            train_meta = pd.read_csv(f'/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/splits/train-bp-all-filt2-no-centre{i}.csv')
-            val_meta = pd.read_csv(f'/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/splits/val-bp-all-filt2-no-centre{i}.csv')
-            test_meta = pd.read_csv(f'/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/splits/test-bp-all-filt2-no-centre{i}.csv')
-        
-            print(f'got specific csvs excluding centre {i}')
+
     else:
         train_meta = pd.read_csv(data_setting['train_meta_path']) 
         val_meta = pd.read_csv(data_setting['val_meta_path'])
@@ -135,32 +154,44 @@ def get_dataset(opt):
     
     else:
         dataset_name = getattr(datasets, opt['dataset_name'])
-        if  opt['dataset_name'] == 'UKBB_RET' and opt['class_name'] == 'ckd': # different images are saved for this b/c not all images have ckd label
-                pickle_train_path = data_setting['pickle_train_ckd_path']
-                pickle_val_path = data_setting['pickle_val_ckd_path']
-                pickle_test_path = data_setting['pickle_test_ckd_path']
+        if  opt['dataset_name'] == 'UKBB_RET' or opt['dataset_name'] == 'MNIST': # different images are saved for this b/c not all images have ckd label
+            pickle_train_path = os.path.join(root_path,data_folder,data_setting['pickle_train_path'])
+            pickle_val_path = os.path.join(root_path,data_folder,data_setting['pickle_val_path'])
+            pickle_test_path = os.path.join(root_path,data_folder,data_setting['pickle_test_path'])
+            
+            print('pickle_train_path', pickle_train_path)
+
         else:
             pickle_train_path = data_setting['pickle_train_path']
             print('pickle_train_path', pickle_train_path)
             pickle_val_path = data_setting['pickle_val_path']
             pickle_test_path = data_setting['pickle_test_path']
-        train_data = dataset_name(train_meta, pickle_train_path, opt['sensitive_name'], opt['train_sens_classes'], transform_train)
-        val_data = dataset_name(val_meta, pickle_val_path, opt['sensitive_name'], opt['sens_classes'], transform_test)
-        test_data = dataset_name(test_meta, pickle_test_path, opt['sensitive_name'], opt['sens_classes'], transform_test)
+        
+        # so that pickle files are used in default case unless training splits are different eg with adjust centre 
+        if data_setting['adjust_centre'] == True or data_setting['adjust_size'] == True:
+            train_data = dataset_name(train_meta, pickle_train_path, opt['sensitive_name'], opt['train_sens_classes'], transform_train,use_pkl=False)
+            val_data = dataset_name(val_meta, pickle_val_path, opt['sensitive_name'], opt['sens_classes'], transform_test,use_pkl=False)
+            test_data = dataset_name(test_meta, pickle_test_path, opt['sensitive_name'], opt['sens_classes'], transform_test,use_pkl=False)
+        else:
+            train_data = dataset_name(train_meta, pickle_train_path, opt['sensitive_name'], opt['train_sens_classes'], transform_train)
+            val_data = dataset_name(val_meta, pickle_val_path, opt['sensitive_name'], opt['sens_classes'], transform_test)
+            test_data = dataset_name(test_meta, pickle_test_path, opt['sensitive_name'], opt['sens_classes'], transform_test)
     
     print('loaded dataset ', opt['dataset_name'])
         
-    if opt['experiment']=='resampling' or opt['experiment']=='GroupDRO' or opt['experiment']=='resamplingSWAD':
+    if opt['experiment']=='resampling' or opt['experiment']=='resamplingSWAD': # or opt['experiment']=='GroupDRO' 
+        print('resampling')
         weights = train_data.get_weights(resample_which = opt['resample_which'])
         sampler = WeightedRandomSampler(weights, len(weights), replacement=True, generator = g)
+        print('weights', list(set(weights)))
     else:
         sampler = None
 
     train_loader = torch.utils.data.DataLoader(
                             train_data, batch_size=opt['batch_size'], 
                             sampler=sampler,
-                            shuffle=(opt['experiment']!='resampling' and opt['experiment']!='GroupDRO' and opt['experiment']!='resamplingSWAD'), num_workers=8, 
-                            worker_init_fn=seed_worker, generator=g, pin_memory=True)
+                            shuffle=(opt['experiment']!='resampling' and opt['experiment']!='resamplingSWAD'), num_workers=8, 
+                            worker_init_fn=seed_worker, generator=g, pin_memory=True) # for shuffle - and opt['experiment']!='GroupDRO' 
     val_loader = torch.utils.data.DataLoader(
                           val_data, batch_size=opt['batch_size'],
                           shuffle=True, num_workers=8, worker_init_fn=seed_worker, generator=g, pin_memory=True)

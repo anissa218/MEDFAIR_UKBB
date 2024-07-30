@@ -80,6 +80,9 @@ class CFair(BaseNet):
             
             if self.log_freq and (i % self.log_freq == 0):
                 self.wandb.log({'Training loss': running_loss / (i+1), 'Training AUC': auc / (i+1)})
+        
+        print('scheduler step')
+        self.scheduler.step()
 
         running_loss /= no_iter
         running_adv_loss /= no_iter

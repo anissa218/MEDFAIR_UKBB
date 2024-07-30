@@ -43,6 +43,8 @@ def collect_args(args=None):
                             'GroupDRO',
                             'BayesCNN',
                             'resamplingSWAD',
+                            'Regression',
+                            'baseline_simple'
                         ],
                         default = 'baseline')
 
@@ -51,13 +53,17 @@ def collect_args(args=None):
     parser.add_argument('--if_wandb', type=bool, default=True)
     parser.add_argument('--dataset_name', default='CXP', choices=['CXP', 'NIH', 'MIMIC_CXR', 'RadFusion', 'RadFusion4', 
     'HAM10000', 'HAM100004', 'Fitz17k', 'OCT', 'PAPILA', 'ADNI', 'ADNI3T', 'COVID_CT_MD','RadFusion_EHR',
-    'MIMIC_III', 'eICU','UKBB_RET'])
+    'MIMIC_III', 'eICU','UKBB_RET','UKBB_RET_REG','MNIST'])
 
     # class name - just for UKBB
-    parser.add_argument('--class_name', default='sex', choices=['sex', 'bmi', 'ckd', 'bp'])    
+    parser.add_argument('--class_name', default='', choices=['sex', 'bmi', 'ckd', 'bp','adj_bp','diab'])
+    parser.add_argument('--data_folder', default = 'all_filt2', help='name of folder from which to get data (eg high quality etc)')
+
+    # is small - just for MNIST
+    parser.add_argument('--is_small', type=str2bool, nargs='?',const=False, default=False,help='if using dataset with small image size')   
     parser.add_argument('--resume_path', type = str, default='', help = 'explicitly indentify checkpoint path to resume.')
     
-    parser.add_argument('--sensitive_name', default='Sex', choices=['Sex', 'Age', 'Race', 'skin_type', 'Insurance', 'Ethnicity','Centre'])
+    parser.add_argument('--sensitive_name', default='Sex', choices=['Sex', 'Age', 'Race', 'skin_type', 'Insurance', 'Ethnicity','Centre', 'Random'])
     parser.add_argument('--is_3d', type=bool, default=False)
     parser.add_argument('--is_tabular', type=bool, default=False)
     
@@ -71,7 +77,7 @@ def collect_args(args=None):
     parser.add_argument('--centre_name',type=float,default=0,help='centre to exclude from training, should be int from 0-5') # anissa changes
 
     # training 
-    parser.add_argument('--random_seed', type=int, default=0)
+    parser.add_argument('--random_seed', type=int, default=42)
     parser.add_argument('--batch_size', type=int, default=1024)
     parser.add_argument('--no_cuda', dest='cuda', action='store_false')
     parser.add_argument('--lr', type=float, default=1e-4, help = 'learning rate')
@@ -84,7 +90,9 @@ def collect_args(args=None):
     parser.add_argument('--hyper_search', type=bool, default=False, help = 'if searching hyper-parameters')
     parser.add_argument('--augment', type=str2bool, nargs='?',
                         const=True, default=True,
-                        help='if using data augmentation') # anissa changes    
+                        help='if using data augmentation') # anissa changes
+    parser.add_argument('--pos_weight', type=float, default=1.0, help = 'weight for positive class in loss function')    
+    parser.add_argument('--optimizer', type=str, default='Adam', choices=['Adam', 'SGD'], help='optimizer for training')
     # testing
     parser.add_argument('--hash_id', type=str, default = '')
     
@@ -93,14 +101,14 @@ def collect_args(args=None):
     
     # cross-domain
     parser.add_argument('--cross_testing', action='store_true')
-    parser.add_argument('--source_domain', default='', choices=['CXP', 'MIMIC_CXR', 'ADNI', 'ADNI3T','UKBB_RET'])
-    parser.add_argument('--target_domain', default='', choices=['CXP', 'MIMIC_CXR', 'ADNI', 'ADNI3T','UKBB_RET'])
+    parser.add_argument('--source_domain', default='', choices=['CXP', 'MIMIC_CXR', 'ADNI', 'ADNI3T','UKBB_RET','UKBB_RET_REG'])
+    parser.add_argument('--target_domain', default='', choices=['CXP', 'MIMIC_CXR', 'ADNI', 'ADNI3T','UKBB_RET','UKBB_RET_REG'])
     parser.add_argument('--cross_testing_model_path', type=str, default='', help='path of the models of three random seeds')
     parser.add_argument('--cross_testing_model_path_single', type=str, default='', help='path of the models')
     
     # network
     parser.add_argument('--backbone', default = 'cusResNet18', choices=['cusResNet18', 'cusResNet50','cusDenseNet121',
-                                                                        'cusResNet18_3d', 'cusResNet50_3d', 'cusMLP'])
+                                                                        'cusResNet18_3d', 'cusResNet50_3d', 'cusMLP','SimpleCNN','InceptionV3'])
     #parser.add_argument('--pretrained', type=bool, default=True, help = 'if use pretrained ResNet backbone') 
     parser.add_argument("--pretrained", type=str2bool, nargs='?',
                         const=True, default=True,
@@ -136,8 +144,11 @@ def collect_args(args=None):
     parser.add_argument("--gamma_od", type=float, default=0.1, help="coefficient for loss of ODR")
     parser.add_argument("--step_size", type=int, default=20, help="step size for adjusting coefficients for loss of ODR")
     # GroupDRO
-    parser.add_argument("--groupdro_alpha", type=float, default=0.2, help="coefficient alpha for loss of GroupDRO")
+    parser.add_argument("--groupdro_alpha", type=float, default=1.0, help="coefficient alpha for loss of GroupDRO if doing robust loss greedy (if =1 no robust loss greedy)")
     parser.add_argument("--groupdro_gamma", type=float, default=0.1, help="coefficient gamma for loss of GroupDRO")
+    parser.add_argument("--groupdro_step", type=float, default=0.01, help="step size GroupDRO (how much to weight high losses)")
+    parser.add_argument("--groupdro_adj", type=float, default=0, help="how much to adjust for group size in GroupDRO")
+
     # SWA
     parser.add_argument("--swa_start", type=int, default=7, help="starting epoch for averaging of SWA")
     parser.add_argument("--swa_lr", type=float, default=0.0001, help="learning rate for averaging of SWA")
@@ -184,16 +195,20 @@ def create_exerpiment_setting(opt, do_wandb=True):
     
     opt['device'] = torch.device('cuda' if opt['cuda'] else 'cpu')
     
-    opt['save_folder'] = os.path.join('your_path/fariness_data/model_records', opt['dataset_name'], opt['sensitive_name'], opt['backbone'], opt['experiment'],opt['wandb_name'])
+    opt['save_folder'] = os.path.join('your_path/fariness_data/model_records', opt['dataset_name'], opt['sensitive_name'], opt['backbone'], opt['experiment'],opt['wandb_name'],str(opt['random_seed']))
     opt['resume_path'] = opt['save_folder']
     basics.creat_folder(opt['save_folder'])
     
     optimizer_setting = {
-        'optimizer': torch.optim.Adam,
+        'optimizer': torch.optim.SGD if opt['optimizer'] == 'SGD' else torch.optim.Adam,
         'lr': opt['lr'],
         'weight_decay': opt['weight_decay'],
     }
     opt['optimizer_setting'] = optimizer_setting
+
+    print('early stopping: ', opt['early_stopping'])
+
+    # opt['early_stopping'] = 10 #temporary fix
     
     optimizer_setting2 = {
         'optimizer': torch.optim.Adam,
@@ -225,12 +240,18 @@ def create_exerpiment_setting(opt, do_wandb=True):
         
         else:
             data_setting['adjust_size'] = False
-        
-        if opt['adjust_centre'] == True:
-            data_setting['adjust_centre'] = True
-            data_setting['centre_name'] = int(opt['centre_name'])
+        if opt['is_small'] == True:
+            data_setting['is_small'] = True
         else:
-            data_setting['adjust_centre'] = False
+            data_setting['is_small'] = False
+        try:
+            if opt['adjust_centre'] == True:
+                data_setting['adjust_centre'] = True
+                data_setting['centre_name'] = int(opt['centre_name'])
+            else:
+                data_setting['adjust_centre'] = False
+        except:
+            pass
 
     except:
         data_setting = {}

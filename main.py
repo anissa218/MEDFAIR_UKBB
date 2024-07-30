@@ -25,12 +25,13 @@ if __name__ == '__main__':
     print(opt['pretrained'])
     if not opt['test_mode']:
         
-        random_seeds = np.random.choice(range(100), size = 1, replace=False).tolist() # changed this so so that each model is only trained once!!
+        #random_seeds = np.random.choice(range(100), size = 1, replace=False).tolist() # changed this so so that each model is only trained once!!
+        random_seeds = [opt['random_seed']]
         val_df = pd.DataFrame()
         test_df = pd.DataFrame()
         print('Random seed: ', random_seeds)
         for random_seed in random_seeds:
-            opt['random_seed'] = random_seed
+            print(opt['experiment'])
 
             # temporary code
             # with open('opt.json', 'w') as f:
