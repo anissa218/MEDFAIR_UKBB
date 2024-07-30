@@ -1,5 +1,6 @@
 # Adapting MEDFAIR for analysis of biases in retinal images from the UK Biobank
 
+Work for paper to be presented at FAIMI MICCAI 2024 workshop in October.
 
 Forked and adapted from [MEDFAIR](https://github.com/ys-zong/MEDFAIR/blob/main/): fairness benchmarking suite for medical imaging ([paper](https://arxiv.org/abs/2210.01725)). 
 
@@ -10,7 +11,13 @@ See MEDFAIR documentation [here](https://github.com/ys-zong/MEDFAIR/blob/main/do
 ### Installation
 Python >= 3.8+ and Pytorch >=1.10 are required for running the code. Other necessary packages are listed in [`environment.yml`](../environment.yml).
 
-### Installation via conda:
+## via pip:
+```python
+cd MEDFAIR/
+pip install -r myrequirements.txt
+```
+
+## via conda:
 ```python
 cd MEDFAIR/
 conda env create -n fair_benchmark -f environment.yml
@@ -18,18 +25,12 @@ conda activate fair_benchmark
 ```
 
 ### Dataset
-Due to the data use agreements, we cannot directly share the download link. Please register and download datasets using the links from the table below:
-
+Due to data use agreements, the UKBB retinal images cannot be shared. For those with access, we use R eye images from Datafield 21015. The code could be easily adapted for other retinal imaging or medical imaging datasets.
 
 ### Data Preprocessing
-See `notebooks/HAM10000.ipynb` for an simple example of how to preprocess the data into desired format. You can also find other preprocessing scripts for corresponding datasets.
-Basically, it contains 3 steps:
-1. Preprocess metadata.
-2. Split to train/val/test set
-3. Save images into pickle files (optional -- we usually do this for 2D images instead of 3D images, as data IO is not the bottleneck for training 3D images).
+See `mynotebooks/UKBB Preprocessing.ipynb` for information on preprocessing of relevant sensitive atrtibutes, splitting into train/val/test sets, and pickling images.
 
 After preprocessing, specify the paths of the metadata and pickle files in `configs/datasets.json`.
-
 
 ### Run a single experiment
 ```python
@@ -39,26 +40,24 @@ python main.py --experiment [experiment] --experiment_name [experiment_name] --d
      --output_dim [output_dim] --num_classes [num_classes]
 ```
 
+To reproduce experiments in the paper (replace experiment, sensitive_name, and sens_classes accordingly):
+
 For example, for running `ERM` in `HAM10000` dataset with `Sex` as the sensitive attribute:
-```python
-python main.py --experiment baseline --dataset_name HAM10000 \
-     --total_epochs 20 --sensitive_name Sex --batch_size 1024 \
-     --sens_classes 2 --output_dim 1 --num_classes 1
+```python main.py --experiment baseline --wandb_name [wandb_name] --data_folder [data_folder] --early_stopping 10 --class_name adj_bp --dataset_name UKBB_RET --pretrained True --total_epochs 100 --sensitive_name Centre --batch_size 512 --sens_classes 6 --output_dim 1 --num_classes 1 --random_seed 42 --backbone InceptionV3 --lr 0.0005
 ```
 
 See `parse_args.py` for more options.
 
-### Run a grid search on a Slurm cluster/Regular Machine
-```python
-python sweep/train-sweep/sweep_batch.py --is_slurm True/False
-```
-Set the other arguments as needed.
-
-### Model selection and Results analysis
+### Results Analysis
 See `notebooks/results_analysis.ipynb` for a step by step example.
 
 ## Citation
 Please consider citing our paper if you find this repo useful.
+
+
+## Acknowledgement
+
+We thank MEDFAIR authors and their detailed repo which has formed the basis of this work.
 ```
 @inproceedings{zong2023medfair,
     title={MEDFAIR: Benchmarking Fairness for Medical Imaging},
@@ -67,6 +66,3 @@ Please consider citing our paper if you find this repo useful.
     year={2023},
 }
 ```
-
-## Acknowledgement
-MEDFAIR adapts implementations from many repos (check [here](docs/reference.md#debiasing-methods) for the original implementation of the algorithms), as well as many other codes. Many thanks!
