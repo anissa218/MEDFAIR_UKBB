@@ -9,7 +9,7 @@ See MEDFAIR documentation [here](https://github.com/ys-zong/MEDFAIR/blob/main/do
 ## Quick Start
 
 ### Installation
-Python >= 3.8+ and Pytorch >=1.10 are required for running the code. Other necessary packages are listed in [`environment.yml`](../environment.yml).
+Python >= 3.8+ and Pytorch >=1.10 are required for running the code.
 
 ## Via pip:
 ```python
