@@ -15,7 +15,7 @@
         "image_feature_path": "yourpath",
         "pickle_train_path": "",
         "pickle_val_path": "",
-        "pickle_test_path": ",
+        "pickle_test_path": "",
         "train_meta_path": "",
         "val_meta_path": "",
         "test_meta_path": ""
