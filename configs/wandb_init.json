@@ -1,7 +1,7 @@
 {
     "project" : "MEDFAIR",
-    "dir": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/outputs",
-    "entity": "anissa218",
+    "dir": "",
+    "entity": "",
     "allow_val_change": true,
     "sync_tensorboard": true,
     "tags": ["all"],
