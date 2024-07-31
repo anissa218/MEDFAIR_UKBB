@@ -11,13 +11,13 @@ See MEDFAIR documentation [here](https://github.com/ys-zong/MEDFAIR/blob/main/do
 ### Installation
 Python >= 3.8+ and Pytorch >=1.10 are required for running the code.
 
-## Via pip:
+Via pip:
 ```python
 cd MEDFAIR/
 pip install -r my_requirements.txt
 ```
 
-## Via conda:
+Via conda:
 ```python
 cd MEDFAIR/
 conda env create -n fair_benchmark -f environment.yml
@@ -48,7 +48,7 @@ python main.py --experiment baseline --wandb_name [wandb_name] --data_folder [da
 
 See `parse_args.py` for more options.
 
-### Results Analysis
+### Analyse results
 See `mynotebooks/UKBB Baseline Model Analysis` for an example analysis of the baseline (ERM) model, its disparities, and characterisation of its disparities (eg analysis of model feature representations etc.).
 
 See `mynotebooks/UKBB Mitigation Models Analysis` for an example analysis of the mitigation models, and comparison of their performance.
