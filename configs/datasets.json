@@ -13,47 +13,23 @@
     "MIMIC_CXR":
     {
         "image_feature_path": "yourpath",
-        "pickle_train_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/mimic-cxr/pkls/train_images.pkl",
-        "pickle_val_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/mimic-cxr/pkls/val_images.pkl",
-        "pickle_test_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/mimic-cxr/pkls/test_images.pkl",
-        "train_meta_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/mimic-cxr/splits/train.csv",
-        "val_meta_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/mimic-cxr/splits/val.csv",
-        "test_meta_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/mimic-cxr/splits/test.csv"
+        "pickle_train_path": "",
+        "pickle_val_path": "",
+        "pickle_test_path": ",
+        "train_meta_path": "",
+        "val_meta_path": "",
+        "test_meta_path": ""
     },
     "UKBB_RET":
     {
         "image_feature_path": "yourpath",
-        "root_path":"/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/",
+        "root_path":"yourpath",
         "pickle_train_path": "pkls/train_images.pkl",
         "pickle_val_path": "pkls/val_images.pkl",
         "pickle_test_path": "pkls/test_images.pkl",
         "train_adj_bp_meta_path": "splits/train-adj-bp.csv",
         "val_adj_bp_meta_path": "splits/val-adj-bp.csv",
-        "test_adj_bp_meta_path": "splits/test-adj-bp.csv",
-        "train_sex_meta_path": "splits/train-sex.csv",
-        "val_sex_meta_path": "splits/val-sex.csv",
-        "test_sex_meta_path": "splits/test-sex.csv"
-    },
-    "UKBB_RET_REG":
-    {
-        "image_feature_path": "yourpath",
-        "pickle_train_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/high_qual_filt2/pkls/train_images.pkl",
-        "pickle_val_path":  "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/high_qual_filt2/pkls/val_images.pkl",
-        "pickle_test_path":  "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/high_qual_filt2/pkls/test_images.pkl",
-        "train_meta_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/high_qual_filt2/splits/train-adj-bp.csv",
-        "val_meta_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/high_qual_filt2/splits/val-adj-bp.csv",
-        "test_meta_path": "/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/ukbb-ret/high_qual_filt2/splits/test-adj-bp.csv"
-    },
-    "MNIST":
-    {
-        "image_feature_path": "yourpath",
-        "root_path":"/gpfs3/well/papiez/users/hri611/python/MEDFAIR-PROJECT/MEDFAIR/data/mnist/",
-        "pickle_train_path": "pkls/train_images.pt",
-        "pickle_val_path": "pkls/val_images.pt",
-        "pickle_test_path": "pkls/test_images.pt",
-        "train_meta_path": "splits/train.csv",
-        "val_meta_path": "splits/val.csv",
-        "test_meta_path": "splits/test.csv"
+        "test_adj_bp_meta_path": "splits/test-adj-bp.csv"
     },
     "PAPILA":
     {
