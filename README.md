@@ -1,6 +1,6 @@
 # Adapting MEDFAIR for analysis of biases in retinal images from the UK Biobank
 
-Work for ([paper](https://arxiv.org/abs/2408.02676)) to be presented at FAIMI MICCAI 2024 workshop in October.
+Work for [paper](https://arxiv.org/abs/2408.02676) to be presented at FAIMI MICCAI 2024 workshop in October.
 
 Forked and adapted from [MEDFAIR](https://github.com/ys-zong/MEDFAIR/blob/main/): fairness benchmarking suite for medical imaging ([paper](https://arxiv.org/abs/2210.01725)). 
 
