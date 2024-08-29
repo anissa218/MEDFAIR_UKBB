@@ -2,9 +2,7 @@
 
 Work for [paper](https://arxiv.org/abs/2408.02676) to be presented at FAIMI MICCAI 2024 workshop in October.
 
-Forked and adapted from [MEDFAIR](https://github.com/ys-zong/MEDFAIR/blob/main/): fairness benchmarking suite for medical imaging ([paper](https://arxiv.org/abs/2210.01725)). 
-
-See MEDFAIR documentation [here](https://github.com/ys-zong/MEDFAIR/blob/main/docs/index.md).
+Forked and adapted from [MEDFAIR](https://github.com/ys-zong/MEDFAIR/blob/main/): fairness benchmarking suite for medical imaging ([paper](https://arxiv.org/abs/2210.01725)). See MEDFAIR documentation [here](https://github.com/ys-zong/MEDFAIR/blob/main/docs/index.md).
 
 ## Quick Start
 
