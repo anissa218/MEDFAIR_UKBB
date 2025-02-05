@@ -56,7 +56,7 @@ Please consider citing our paper if you find this repo useful.
 ```
 @InProceedings{alloula2024biasesukbiobankbasedretinal,
      author="Alloula, Anissa and Mustafa, Rima and McGowan, Daniel R. and Papie{\.{z}}, Bart{\l}omiej W.",
-     editor="Puyol-Ant{\'o}n, Esther and Zamzmi, Ghada and Feragen, Aasa and King, Andrew P. and Cheplygina, Veronika and Ganz-Benjaminsen, Melanie and Ferrante, Enzo and Glocker, Ben and Petersen,        Eike and Baxter, John S. H. and Rekik, Islem and Eagleson, Roy",
+     editor="Puyol-Ant{\'o}n, Esther and Zamzmi, Ghada and Feragen, Aasa and King, Andrew P. and Cheplygina, Veronika and Ganz-Benjaminsen, Melanie and Ferrante, Enzo and Glocker, Ben and Petersen,  Eike and Baxter, John S. H. and Rekik, Islem and Eagleson, Roy",
      title="On Biases in a UK Biobank-Based Retinal Image Classification Model",
      booktitle="Ethics and Fairness in Medical Imaging",
      year="2025",
