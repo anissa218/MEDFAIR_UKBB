@@ -54,14 +54,29 @@ See `mynotebooks/UKBB Mitigation Models Analysis` for an example analysis of the
 ## Citation
 Please consider citing our paper if you find this repo useful.
 ```
-@article{alloula2024biasesukbiobankbasedretinal,
-      title={On Biases in a UK Biobank-based Retinal Image Classification Model}, 
-      author={Anissa Alloula and Rima Mustafa and Daniel R McGowan and Bartłomiej W. Papież},
-      year={2024},
-      eprint={2408.02676},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2408.02676}, 
+@InProceedings{alloula2024biasesukbiobankbasedretinal,
+author="Alloula, Anissa
+and Mustafa, Rima
+and McGowan, Daniel R.
+and Papie{\.{z}}, Bart{\l}omiej W.",
+editor="Puyol-Ant{\'o}n, Esther
+and Zamzmi, Ghada
+and Feragen, Aasa
+and King, Andrew P.
+and Cheplygina, Veronika
+and Ganz-Benjaminsen, Melanie
+and Ferrante, Enzo
+and Glocker, Ben
+and Petersen, Eike
+and Baxter, John S. H.
+and Rekik, Islem
+and Eagleson, Roy",
+title="On Biases in a UK Biobank-Based Retinal Image Classification Model",
+booktitle="Ethics and Fairness in Medical Imaging",
+year="2025",
+publisher="Springer Nature Switzerland",
+address="Cham",
+pages="140--150"
 }
 ```
 ## Acknowledgement
